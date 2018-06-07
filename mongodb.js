@@ -3,9 +3,9 @@
 // Get RP records for each cloud
 // TODO: Improve import so that I can use a find filter and not skip.
 var rp_ww = db.resourceProvider.find().skip(0).limit(1)[0].value;
-var rp_ff = db.resourceProvider.find().skip(3).limit(1)[0].value;
+var rp_ff = db.resourceProvider.find().skip(1).limit(1)[0].value;
 var rp_mc = db.resourceProvider.find().skip(2).limit(1)[0].value;
-var rp_bf = db.resourceProvider.find().skip(1).limit(1)[0].value;
+var rp_bf = db.resourceProvider.find().skip(3).limit(1)[0].value;
 
 // Get list of namespaces per cloud
 function getNamespaces(rps) { return rps.map(function(rp){return rp.namespace}).sort() }

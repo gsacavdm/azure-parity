@@ -86,6 +86,6 @@ These need to be further massaged in MongoDB.
 1. Load these files into MongoDB using the mongoimport tool
 
     >NOTE: At this time only the resourceProvider-* files should be loaded.
-    ><br>They need to be loaded in the following order: Ww, Bf, Mc, Ff
+    ><br>They need to be loaded in the following order: Ww, Ff, Mc, Bf
 
 1. In MongoDB, run everything in the [mongodb.js file](mongodb.js)
