@@ -45,10 +45,18 @@ var api_bf = getApis(rp_bf);
 // Get delta for namespaces
 var rpns_delta = rpns_ww.map(rpns => {return { 
   namespace:rpns, 
+  isFirstParty: rpns.toLowerCase().indexOf("microsoft") !== -1,
   inFairfax:rpns_ff.filter(ff => ff === rpns).length, 
   inMooncake:rpns_mc.filter(mc => mc === rpns).length, 
   inBlackforest:rpns_bf.filter(bf => bf === rpns).length 
 }});
+
+// Get count of missing RPs by sovereign
+var rpns_missing = {
+  Fairfax: rpns_delta.filter(rpns => rpns.isFirstParty && rpns.inFairfax === 0).length,
+  Mooncake: rpns_delta.filter(rpns => rpns.isFirstParty && rpns.inMooncake === 0).length,
+  Blackforest: rpns_delta.filter(rpns => rpns.isFirstParty && rpns.inBlackforest === 0).length
+}
 
 // Get namespaces that are present in at least one sovereign
 var rpns_sovereign = rpns_delta.filter(rpns => rpns.inFairfax || rpns.inMooncake || rpns.inBlackforest)
