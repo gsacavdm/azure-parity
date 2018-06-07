@@ -49,8 +49,8 @@ namespace azure_parity
                 var armResource = azureEndpoints[i];
 
                 Console.WriteLine("Getting ARM access token...");
-                //var accessToken = GetAccessToken(authority, armResource, clientId, clientSecret).Result;
-                Console.WriteLine(accessToken);
+                var accessToken = GetAccessToken(authority, armResource, clientId, clientSecret).Result;
+                //Console.WriteLine(accessToken);
                 var armHttpClient = GetHttpClient(accessToken);
 
                 Console.WriteLine("Getting resource providers...");
