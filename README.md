@@ -88,4 +88,4 @@ These need to be further massaged in MongoDB.
     >NOTE: At this time only the resourceProvider-* files should be loaded.
     ><br>They need to be loaded in the following order: Ww, Ff, Mc, Bf
 
-1. In MongoDB, run everything in the [mongodb.js file](mongodb.js)
+1. In MongoDB, run everything in the mongodb directory.
