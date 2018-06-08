@@ -14,6 +14,7 @@ namespace azure_parity
     class Program
     {
         static bool Debug = true;
+        static string WhatToGet = "rps,policies,roles,extensions";
 
         static void Main(string[] args)
         {
@@ -32,6 +33,8 @@ namespace azure_parity
             var aadEndpoints = new string[] { "https://login.microsoftonline.com/", "https://login.microsoftonline.us/", "https://login.chinacloudapi.cn/", "https://login.microsoftonline.de/" };
             var azureEndpoints = new string[] { "https://management.azure.com/", "https://management.usgovcloudapi.net/", "https://management.chinacloudapi.cn/", "https://management.microsoftazure.de/" };
             var portalEndpoints = new string[] { "https://portal.azure.com/", "https://portal.azure.us/", "https://portal.azure.cn/", "https://portal.microsoftazure.de/" };
+
+            var whatToGet = WhatToGet.Split(",");
 
             for (int i = 0; i < 4; i++) {
                 Console.WriteLine("Processing " + clouds[i] + "...");
@@ -53,27 +56,35 @@ namespace azure_parity
                 //Console.WriteLine(accessToken);
                 var armHttpClient = GetHttpClient(accessToken);
 
-                Console.WriteLine("Getting resource providers...");
-                var resourceProvider = GetResourceProviders(armHttpClient, armResource).Result;
-                //Console.WriteLine(resourceProvider);
-                WriteToFile("resourceProvider-" + clouds[i] + ".json", resourceProvider);
+                if (Array.Exists(whatToGet, x => x == "rps")) {
+                    Console.WriteLine("Getting resource providers...");
+                    var resourceProvider = GetResourceProviders(armHttpClient, armResource).Result;
+                    //Console.WriteLine(resourceProvider);
+                    WriteToFile("resourceProvider-" + clouds[i] + ".json", resourceProvider);
+                }
 
-                Console.WriteLine("Getting policies...");
-                var policies = GetPolicies(armHttpClient, armResource, subscriptionId).Result;
-                //Console.WriteLine(policies);
-                WriteToFile("policies-" + clouds[i] + ".json", policies);
+                if (Array.Exists(whatToGet, x => x == "policies")) {
+                    Console.WriteLine("Getting policies...");
+                    var policies = GetPolicies(armHttpClient, armResource, subscriptionId).Result;
+                    //Console.WriteLine(policies);
+                    WriteToFile("policies-" + clouds[i] + ".json", policies);
+                }
 
-                Console.WriteLine("Getting roles...");
-                var roles = GetRoles(armHttpClient, armResource, subscriptionId).Result;
-                //Console.WriteLine(roles);
-                WriteToFile("roles-" + clouds[i] + ".json", roles);                
+                if (Array.Exists(whatToGet, x => x == "roles")) {
+                    Console.WriteLine("Getting roles...");
+                    var roles = GetRoles(armHttpClient, armResource, subscriptionId).Result;
+                    //Console.WriteLine(roles);
+                    WriteToFile("roles-" + clouds[i] + ".json", roles);
+                }
 
                 var portalHttpClient = GetHttpClient();
 
-                Console.WriteLine("Getting extensions...");
-                var extensions = GetExtensions(portalHttpClient, portalEndpoints[i]).Result;
-                //Console.WriteLine(extensions);
-                WriteToFile("extensions-" + clouds[i] + ".json", extensions);
+                if (Array.Exists(whatToGet, x => x == "extensions")) {
+                    Console.WriteLine("Getting extensions...");
+                    var extensions = GetExtensions(portalHttpClient, portalEndpoints[i]).Result;
+                    //Console.WriteLine(extensions);
+                    WriteToFile("extensions-" + clouds[i] + ".json", extensions);
+                }
 
                 Console.WriteLine("Done!");
             }
