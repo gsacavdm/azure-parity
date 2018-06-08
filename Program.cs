@@ -106,7 +106,7 @@ namespace azure_parity
         }
 
         public static void WriteToFile(string fileName, string contents) {
-            var filePath = String.Format("/code/azure-parity/bin/output/{0}", fileName);
+            var filePath = String.Format("bin/output/{0}", fileName);
             File.WriteAllText(filePath, contents);
         }
 
