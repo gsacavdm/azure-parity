@@ -14,7 +14,7 @@ namespace azure_parity
     class Program
     {
         static bool Debug = true;
-        static string WhatToGet = "rps,policies,roles,portalextensions";
+        static string WhatToGet = "rps,policies,roles,vmextensions,portalextensions";
 
         static void Main(string[] args)
         {
@@ -77,6 +77,13 @@ namespace azure_parity
                     WriteToFile("roles-" + clouds[i] + ".json", roles);
                 }
 
+                if (Array.Exists(whatToGet, x => x == "vmextensions")) {
+                    Console.WriteLine("Getting VM extensions...");
+                    var vmExtensions = GetVmExtensions(armHttpClient, armResource, subscriptionId).Result;
+                    //Console.WriteLine(vmExtensions);
+                    WriteToFile("vmextensions-" + clouds[i] + ".json", vmExtensions); 
+                }  
+
                 var portalHttpClient = GetHttpClient();
 
                 if (Array.Exists(whatToGet, x => x == "portalextensions")) {
@@ -134,6 +141,57 @@ namespace azure_parity
                     azureEndpoint, subscriptionId, roleApiVersion);
             if (Debug) Console.WriteLine("RoleEndpoint: " + roleEndpoint);
             return await httpClient.GetStringAsync(roleEndpoint);
+        }
+
+        public static async Task<string> GetVmExtensions(HttpClient httpClient, string azureEndpoint, string subscriptionId) {
+            var apiVersion = "2017-12-01";
+            var locationsEndpointFmt = 
+                "{0}subscriptions/{1}/locations";
+            var publishersEndpointFmt = 
+                "{0}subscriptions/{1}/providers/Microsoft.Compute/locations/{2}/publishers";
+            var typesEndpointFmt = 
+                "{0}/{1}/artifacttypes/vmextension/types";
+            var versionsEndpointFmt =
+                "{0}/{1}/versions";
+
+            var locationsEndpoint = String.Format(locationsEndpointFmt, azureEndpoint, subscriptionId);
+            if (Debug) Console.WriteLine("LocationsEndpoint: " + locationsEndpoint);
+            var locations =  JObject.Parse(await httpClient.GetStringAsync(locationsEndpoint + "?api-version=" + apiVersion))["value"];
+
+            var publishersEndpoint = String.Format(publishersEndpointFmt, azureEndpoint, subscriptionId, locations[0]["name"]);
+            if (Debug) Console.WriteLine("PublishersEndpoint: " + publishersEndpoint);
+            var publishers = JArray.Parse(await httpClient.GetStringAsync(publishersEndpoint + "?api-version=" + apiVersion));
+
+            var vmExtensions = new JArray();
+
+            foreach(var publisher in publishers) {
+                try {
+                    var typesEndpoint = String.Format(typesEndpointFmt, publishersEndpoint, publisher["name"]);
+                    if (Debug) Console.WriteLine("TypesEndpoint: " + typesEndpoint);
+                    var types = JArray.Parse(await httpClient.GetStringAsync(typesEndpoint + "?api-version=" + apiVersion));
+
+                    foreach(var type in types) {
+                        var versionsEndpoint = String.Format(versionsEndpointFmt, typesEndpoint, type["name"]);
+                        if (Debug) Console.WriteLine("VersionsEndpoint: " + versionsEndpoint);
+                        var versions = JArray.Parse(await httpClient.GetStringAsync(versionsEndpoint + "?api-version=" + apiVersion));
+
+                        foreach (var version in versions) {
+                            var vmExtension = new JObject();
+                            vmExtension["PublisherName"] = publisher["name"];
+                            vmExtension["TypeName"] = type["name"];
+                            vmExtension["Version"] = version["name"];
+                            vmExtensions.Add(vmExtension);
+                        }
+                    }
+                } catch (Exception) {
+                    // TODO: Narrow the scope of the try/catch and exception. Investigate why this errors out.
+                    // Some publishers error out when getting their extension types
+                    // for example Microsoft.Azure.NetworkWatcher.Edp
+                    Console.Write("WARN: Exception occurred");
+                }
+            }
+
+            return vmExtensions.ToString();
         }
 
         public static async Task<string> GetPortalExtensions(HttpClient httpClient, string portalEndpoint) {
