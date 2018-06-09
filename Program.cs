@@ -14,7 +14,7 @@ namespace azure_parity
     class Program
     {
         static bool Debug = true;
-        static string WhatToGet = "rps,policies,roles,extensions";
+        static string WhatToGet = "rps,policies,roles,portalextensions";
 
         static void Main(string[] args)
         {
@@ -79,11 +79,11 @@ namespace azure_parity
 
                 var portalHttpClient = GetHttpClient();
 
-                if (Array.Exists(whatToGet, x => x == "extensions")) {
-                    Console.WriteLine("Getting extensions...");
-                    var extensions = GetExtensions(portalHttpClient, portalEndpoints[i]).Result;
-                    //Console.WriteLine(extensions);
-                    WriteToFile("extensions-" + clouds[i] + ".json", extensions);
+                if (Array.Exists(whatToGet, x => x == "portalextensions")) {
+                    Console.WriteLine("Getting portal extensions...");
+                    var portalExtensions = GetPortalExtensions(portalHttpClient, portalEndpoints[i]).Result;
+                    //Console.WriteLine(portalExtensions);
+                    WriteToFile("portalextensions-" + clouds[i] + ".json", portalExtensions);
                 }
 
                 Console.WriteLine("Done!");
@@ -136,10 +136,13 @@ namespace azure_parity
             return await httpClient.GetStringAsync(roleEndpoint);
         }
 
-        public static async Task<string> GetExtensions(HttpClient httpClient, string portalEndpoint) {
+        public static async Task<string> GetPortalExtensions(HttpClient httpClient, string portalEndpoint) {
             var diagnosticsEndpoint = String.Format("{0}api/diagnostics", portalEndpoint);
             if (Debug) Console.WriteLine("DiagnosticsEndpoint: " + diagnosticsEndpoint);
-            return await httpClient.GetStringAsync(diagnosticsEndpoint);
+            var payload = await httpClient.GetStringAsync(diagnosticsEndpoint);
+
+            var payloadClean = payload.Replace("<pre>","").Replace("</pre>","");
+            return payloadClean;
         }
     }
 }
