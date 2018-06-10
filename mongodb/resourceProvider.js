@@ -2,34 +2,34 @@
 
 // Get RP records for each cloud
 // TODO: Improve import so that I can use a find filter and not skip.
-var rp_ww = db.resourceProvider.find().skip(0).limit(1)[0].value;
-var rp_ff = db.resourceProvider.find().skip(1).limit(1)[0].value;
-var rp_mc = db.resourceProvider.find().skip(2).limit(1)[0].value;
-var rp_bf = db.resourceProvider.find().skip(3).limit(1)[0].value;
+var rp_ww = getRecord("resourceProvider", 0).value;
+var rp_ff = getRecord("resourceProvider", 1).value;
+var rp_mc = getRecord("resourceProvider", 2).value;
+var rp_bf = getRecord("resourceProvider", 3).value;
 
 // Get list of namespaces per cloud
-function getNamespaces(rps) { return rps.map(function(rp){return rp.namespace}).sort() }
+function getNamespaces(rps) { return rps.map(function(rp){return rp.namespace.toLowerCase()}).sort() }
 var rpns_ww = getNamespaces(rp_ww);
 var rpns_ff = getNamespaces(rp_ff);
 var rpns_mc = getNamespaces(rp_mc);
 var rpns_bf = getNamespaces(rp_bf);
 
 // Get resource types per cloud
-function getResourceTypes(rps) { return [].concat.apply([], rps.map(function(rp){return rp.resourceTypes.map(function(rpt){return {namespace: rp.namespace, resourceType: rp.namespace + '/' + rpt.resourceType }} )})).sort() }
+function getResourceTypes(rps) { return [].concat.apply([], rps.map(function(rp){return rp.resourceTypes.map(function(rpt){return {namespace: rp.namespace.toLowerCase(), resourceType: rp.namespace.toLowerCase() + '/' + rpt.resourceType }} )})).sort() }
 var rprt_ww = getResourceTypes(rp_ww);
 var rprt_ff = getResourceTypes(rp_ff);
 var rprt_mc = getResourceTypes(rp_mc);
 var rprt_bf = getResourceTypes(rp_bf);
 
-// Get apis per cloud
+// Get APIs per cloud
 function getApis(rps) {
   return [].concat.apply([],
     [].concat.apply([], 
       rps.map(function(rp) { 
         return rp.resourceTypes.map(function(rpt) { 
           return rpt.apiVersions.map(function(apiVersion) { return {
-            namespace: rp.namespace, 
-            resourceType: rp.namespace + '/' + rpt.resourceType,
+            namespace: rp.namespace.toLowerCase(), 
+            resourceType: rp.namespace.toLowerCase() + '/' + rpt.resourceType,
             apiVersion: apiVersion
           }})
         })
@@ -50,16 +50,18 @@ var rpns_delta = rpns_ww.map(function(rpns) { return {
   inMooncake:rpns_mc.filter(function(mc) { return mc === rpns }).length, 
   inBlackforest:rpns_bf.filter(function(bf) { return bf === rpns }).length 
 }});
+dropAndInsert("resourceProviderDelta", rpns_delta);
 
 // Get count of missing RPs by sovereign
 var rpns_missing = {
   Fairfax: rpns_delta.filter(function(rpns) { return rpns.isFirstParty && rpns.inFairfax === 0 }).length,
   Mooncake: rpns_delta.filter(function(rpns) { return rpns.isFirstParty && rpns.inMooncake === 0 }).length,
-  Blackforest: rpns_delta.filter(function(rpns) { return rpns.isFirstParty && rpns.inBlackforest === 0 }).length
+  Blackforest: rpns_delta.filter(function(rpns) { return rpns.isFirstParty && rpns.inBlackforest === 0 }).length,
+  FairfaxIncluding3rdParties: rpns_delta.filter(function(rpns) { return rpns.inFairfax === 0 }).length,
+  MooncakeIncluding3rdParties: rpns_delta.filter(function(rpns) { return rpns.inMooncake === 0 }).length,
+  BlackforestIncluding3rdParties: rpns_delta.filter(function(rpns) { return rpns.inBlackforest === 0 }).length
 }
-
-// Get namespaces that are present in at least one sovereign
-var rpns_sovereign = rpns_delta.filter(function(rpns) { return rpns.inFairfax || rpns.inMooncake || rpns.inBlackforest })
+dropAndInsert("resourceProviderMissing", rpns_missing);
 
 // Get delta for resource types
 //TODO: harden this do that it doesn't fail if no namespace match
@@ -77,45 +79,77 @@ rprt_delta = rprt_ww.map(function(rprt) { return {
   inMooncake: getResourceTypeInSovereignBit(rpns_delta, rprt, rprt_mc, "inMooncake"),
   inBlackforest: getResourceTypeInSovereignBit(rpns_delta, rprt, rprt_bf, "inBlackforest"),
 }});
+dropAndInsert("resourceTypeDelta", rprt_delta);
 
-rprt_sovereign = rprt_delta.filter(function(rprt) { return rprt.inFairfax !== "N/A" || rprt.inMooncake !== "N/A" || rprt.inBlackforest !== "N/A" })
-
-// Get missing resource types
-function getMissingInSovereignBit(rpns, rprt_sovereign, sovereignBit, includePreview) {
+// Get count of missing resource types by resource provider
+function getMissingInSovereignBit(rpns, rprt, sovereignBit, includePreview) {
   return rpns[sovereignBit] === 0 ?
     "N/A" :
-    rprt_sovereign.filter(function(rprt_sov) {
-      return rprt_sov.namespace === rpns.namespace
-      && rprt_sov[sovereignBit] === 0 // Feature is missing
-      && (includePreview || rprt_sov.nonPreviewApis > 0 )
+    rprt.filter(function(rt) {
+      return rt.namespace === rpns.namespace
+      && rt[sovereignBit] === 0 // Feature is missing
+      && (includePreview || rt.nonPreviewApis > 0 )
     }).length
 }
-rprt_missing = rpns_sovereign.map(function(rpns) { return { 
+rprt_missing_by_ns = rpns_delta.map(function(rpns) { return { 
   namespace: rpns.namespace,
-  missingInFairfax: getMissingInSovereignBit(rpns, rprt_sovereign, "inFairfax", false),
-  missingInMooncake: getMissingInSovereignBit(rpns, rprt_sovereign, "inMooncake", false),
-  missingInBlackforest: getMissingInSovereignBit(rpns, rprt_sovereign, "inBlackforest", false),
-  missingInFairfaxIncludingPreview: getMissingInSovereignBit(rpns, rprt_sovereign, "inFairfax", true),
-  missingInMooncakeIncludingPreview: getMissingInSovereignBit(rpns, rprt_sovereign, "inMooncake", true),
-  missingInBlackforestIncludingPreview: getMissingInSovereignBit(rpns, rprt_sovereign, "inBlackforest", true)
- }}).filter(function(rprt) { 
-      return rprt.missingInFairfax > 0 || rprt.missingInMooncake > 0 || rprt.missingInBlackforest > 0
-})
+  missingInFairfax: getMissingInSovereignBit(rpns, rprt_delta, "inFairfax", false),
+  missingInMooncake: getMissingInSovereignBit(rpns, rprt_delta, "inMooncake", false),
+  missingInBlackforest: getMissingInSovereignBit(rpns, rprt_delta, "inBlackforest", false),
+  missingInFairfaxIncludingPreview: getMissingInSovereignBit(rpns, rprt_delta, "inFairfax", true),
+  missingInMooncakeIncludingPreview: getMissingInSovereignBit(rpns, rprt_delta, "inMooncake", true),
+  missingInBlackforestIncludingPreview: getMissingInSovereignBit(rpns, rprt_delta, "inBlackforest", true)
+}})
+dropAndInsert("resourceTypeMissingByNamespace", rprt_missing_by_ns);
 
 // Get count of RPs with missing features by sovereign
-function normalizeNa(val) { return val === "N/A" ? 0 : val}
-rp_missing_rt = {
-  Fairfax: rprt_missing.map(function(rprt) { return rprt.missingInFairfax }).reduce(function(prev,next) { return normalizeNa(prev) + normalizeNa(next)}),
-  Mooncake: rprt_missing.map(function(rprt) { return rprt.missingInMooncake }).reduce(function(prev,next) { return normalizeNa(prev) + normalizeNa(next)}),
-  Blackforest: rprt_missing.map(function(rprt) { return rprt.missingInBlackforest }).reduce(function(prev,next) { return normalizeNa(prev) + normalizeNa(next)})
+rprt_missing = {
+  Fairfax: rprt_delta.filter(function(rprt) { return rprt.inFairfax === 0 && rprt.nonPreviewApis > 0 }).length,
+  Mooncake: rprt_delta.filter(function(rprt) { return rprt.inMooncake === 0 && rprt.nonPreviewApis > 0 }).length,
+  Blackforest: rprt_delta.filter(function(rprt) { return rprt.inBlackforest === 0 && rprt.nonPreviewApis > 0 }).length,
+  FairfaxIncludingPreview: rprt_delta.filter(function(rprt) { return rprt.inFairfax === 0 }).length,
+  MooncakeIncludingPreview: rprt_delta.filter(function(rprt) { return rprt.inMooncake === 0 }).length,
+  BlackforestIncludingPreview: rprt_delta.filter(function(rprt) { return rprt.inBlackforest === 0 }).length
 }
+dropAndInsert("resourceTypeMissing", rprt_missing);
 
-// Get all missing features for a sovereign
-rprt_sovereign.filter(function(x) { return x.inFairfax === 0 && x.nonPreviewApis > 0 })
+// Get count of resource providers missing one or more resouce types by sovereign
+rpns_missing_rt = {
+  Fairfax: rprt_missing_by_ns.filter(function(ns) { return ns.missingInFairfax > 0 }).length,
+  Mooncake: rprt_missing_by_ns.filter(function(ns) { return ns.missingInMooncake > 0 }).length,
+  Blackforest: rprt_missing_by_ns.filter(function(ns) { return ns.missingInBlackforest > 0 }).length,
+  FairfaxIncludingPreview: rprt_missing_by_ns.filter(function(ns) { return ns.missingInFairfaxIncludingPreview > 0 }).length,
+  MooncakeIncludingPreview: rprt_missing_by_ns.filter(function(ns) { return ns.missingInMooncakeIncludingPreview > 0 }).length,
+  BlackforestIncludingPreview: rprt_missing_by_ns.filter(function(ns) { return ns.missingInBlackforestIncludingPreview > 0 }).length
+}
+dropAndInsert("resourceProviderMissingResouceType", rpns_missing_rt);
 
-// Get all missing features for a namespace
-rprt_sovereign.filter(function(x) { return x.namespace === "microsoft.insights" && x.nonPreviewApis > 0 && (x.inFairfax === 0 || x.inMooncake === 0 || x.inBlackforest ===0 ) })
 
-// Get all missing features
-rprt_sovereign.filter(function(x) { return x.nonPreviewApis > 0 && (x.inFairfax === 0 || x.inMooncake === 0 || x.inBlackforest === 0 ) })
- 
+/////////////////////////
+// Presenting this information
+/////////////////////////
+
+// These many "services" are missing in Fairfax.
+// Considerations: 
+//  * RP used as proxy for service
+//  * None of the sovereigns have any 3rd party service
+//      (these are marketplace developer services like SendGrid & AppDynamics )
+db.resourceProviderMissing.find()
+
+// Get all the missing RPs in Fairfax
+// ACTION: Get status/reason for each one.
+db.resourceProviderDelta.find({inFairfax : 0, isFirstParty : true }, { _id : 0, namespace: 1 })
+
+// These many "services" have missing "features" in Fairfax.
+// Considerations: 
+//  * RP used as proxy for service
+//  * ResourceType used as proxy for feature
+//  * PreviewAPIs used as a proxy for preview features
+db.resourceProviderMissingResourceType.find()
+
+// Get all the RPs with missing resource types in Fairfax
+db.resourceTypeMissingByNamespace.find({ missingInFairfax : { $gt : 0 } }, { _id : 0, namespace : 1 , missingInFairfax : 1 })
+
+// Get all the RPs with missing resource types in Fairfax
+// ACTION: Get status/reason for each one.
+db.resourceTypeDelta.find({ namespace: "Microsoft.Compute", inFairfax : 0 }, { _id : 0, resourceType : 1 , nonPreviewApis : 1 })
