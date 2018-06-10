@@ -14,7 +14,7 @@ namespace azure_parity
     class Program
     {
         static bool Debug = true;
-        static string WhatToGet = "rps,policies,roles,vmextensions,portalextensions";
+        static string WhatToGet = "rps,policies,roles,health,vmextensions,portalextensions";
 
         static void Main(string[] args)
         {
@@ -75,6 +75,13 @@ namespace azure_parity
                     var roles = GetRoles(armHttpClient, armResource, subscriptionId).Result;
                     //Console.WriteLine(roles);
                     WriteToFile("roles-" + clouds[i] + ".json", roles);
+                }
+
+                if (Array.Exists(whatToGet, x => x == "health")) {
+                    Console.WriteLine("Getting health...");
+                    var health = GetHealth(armHttpClient, armResource, subscriptionId).Result;
+                    //Console.WriteLine(health);
+                    WriteToFile("health-" + clouds[i] + ".json", health);
                 }
 
                 if (Array.Exists(whatToGet, x => x == "vmextensions")) {
@@ -141,6 +148,15 @@ namespace azure_parity
                     azureEndpoint, subscriptionId, roleApiVersion);
             if (Debug) Console.WriteLine("RoleEndpoint: " + roleEndpoint);
             return await httpClient.GetStringAsync(roleEndpoint);
+        }
+
+        public static async Task<string> GetHealth(HttpClient httpClient, string azureEndpoint, string subscriptionId) {
+            var healthApiVersion = "2017-05-01";
+            var healthEndpoint = 
+                String.Format("{0}subscriptions/{1}/providers/Microsoft.ResourceHealth?$expand=metadata&api-version={2}", 
+                    azureEndpoint, subscriptionId, healthApiVersion);
+            if (Debug) Console.WriteLine("HealthEndpoint: " + healthEndpoint);
+            return await httpClient.GetStringAsync(healthEndpoint);
         }
 
         public static async Task<string> GetVmExtensions(HttpClient httpClient, string azureEndpoint, string subscriptionId) {
