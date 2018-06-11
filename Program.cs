@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Microsoft.Azure.KeyVault;
@@ -32,7 +33,7 @@ namespace azure_parity
             var clouds = new string[] { "Ww", "Ff", "Mc", "Bf" };
             var aadEndpoints = new string[] { "https://login.microsoftonline.com/", "https://login.microsoftonline.us/", "https://login.chinacloudapi.cn/", "https://login.microsoftonline.de/" };
             var azureEndpoints = new string[] { "https://management.azure.com/", "https://management.usgovcloudapi.net/", "https://management.chinacloudapi.cn/", "https://management.microsoftazure.de/" };
-            var portalEndpoints = new string[] { "https://portal.azure.com/", "https://portal.azure.us/", "https://portal.azure.cn/", "https://portal.microsoftazure.de/" };
+            var portalEndpoints = new string[] { "portal.azure.com", "portal.azure.us", "portal.azure.cn", "portal.microsoftazure.de" };
 
             var whatToGet = WhatToGet.Split(",");
 
@@ -211,12 +212,55 @@ namespace azure_parity
         }
 
         public static async Task<string> GetPortalExtensions(HttpClient httpClient, string portalEndpoint) {
-            var diagnosticsEndpoint = String.Format("{0}api/diagnostics", portalEndpoint);
+            var diagnosticsEndpoint = String.Format("https://{0}/api/diagnostics", portalEndpoint);
             if (Debug) Console.WriteLine("DiagnosticsEndpoint: " + diagnosticsEndpoint);
-            var payload = await httpClient.GetStringAsync(diagnosticsEndpoint);
+            var diagnosticsRaw = await httpClient.GetStringAsync(diagnosticsEndpoint);
 
-            var payloadClean = payload.Replace("<pre>","").Replace("</pre>","");
-            return payloadClean;
+            var diagnosticsClean = diagnosticsRaw.Replace("<pre>","").Replace("</pre>","");
+            var diagnostics = JObject.Parse(diagnosticsClean);
+
+            var extensions = new JArray();
+
+            foreach (var extension in diagnostics["shellEnvironment"]["extensionsMetadata"]) {
+                var extensionName = extension["name"];
+                var extensionUri = extension["uri"];
+                var extensionEndpoint = String.Format("https:{0}?sessionId=01234567890abcdef&trustedAuthority={1}&shellVersion=1.2.3.4&l=en", extensionUri, portalEndpoint);
+                
+                var extensionObject = new JObject();
+                extensionObject["name"] = extensionName;
+                var regexMatch = false;
+                var validEndpoint = false;
+
+                var extensionInfo = String.Empty;
+                if (Debug) Console.WriteLine("ExtensionEndpoint: " + extensionEndpoint);
+                try {
+                    extensionInfo = await httpClient.GetStringAsync(extensionEndpoint);
+                    validEndpoint = true;
+                } catch (Exception ex) {
+                    Console.WriteLine("WARN: Skipping {0} due to exception: {1}", extensionName, ex.Message);
+                }
+
+                var matches = Regex.Matches(extensionInfo, "\"features\"[ ]*:[ ]*{.*?}", RegexOptions.IgnoreCase);
+                if (matches.Count > 0) {
+                    var features ="{" + matches[0].Value + "}";
+                    var featuresJson = JObject.Parse(features)["features"];
+
+                    extensionObject["features"] = featuresJson;
+                    regexMatch = true;
+                } else {
+                    Console.WriteLine("WARN: No features found for extension {0}", extensionName);
+                }
+
+                extensionObject["validEndpoint"] = validEndpoint;
+                extensionObject["regexMatch"] = regexMatch;
+                extensions.Add(extensionObject);
+                //File.WriteAllText(String.Format("bin/output/ext/{0}", extensionName), extensionInfo);
+            }
+            
+            //File.WriteAllText(String.Format("bin/output/{0}", portalEndpoint), diagnosticsClean);
+            var wrapper = new JObject();
+            wrapper["value"] = extensions;
+            return wrapper.ToString();
         }
     }
 }
