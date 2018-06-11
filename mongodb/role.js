@@ -8,7 +8,7 @@ function getRoleDefinition(arr, i) {
     .skip(i)
     .limit(1)[0]
     .value
-    .filter(function(r) { return r.properties.type !== "CustomRole" })
+    .filter(r => r.properties.type !== "CustomRole" )
     .map(function(r)
       { return {
         name: r.name,
@@ -17,10 +17,10 @@ function getRoleDefinition(arr, i) {
         resourceProviders: function (properties) {
           var rps = JSON.stringify(properties).match(rpRegEx);
           if (rps) {
-            rps = rps.map(function (rp) { return rp.toLowerCase() });
+            rps = rps.map(rp => rp.toLowerCase());
 
             // Get distinct list of RPs
-            return rps.filter(function(rp, i) { return rps.indexOf(rp) === i; })
+            return rps.filter((rp, i) => rps.indexOf(rp) === i)
           } else {
             return [];
           }
@@ -34,25 +34,25 @@ var r_mc = getRoleDefinition(db.role,2);
 var r_bf = getRoleDefinition(db.role,3);
 
 // Get delta for roles
-var r_delta = r_ww.map(function(p) { return { 
+var r_delta = r_ww.map(p => { return { 
   name: p.name, 
   roleName: p.roleName, 
   preview: p.preview, 
   resourceProviders: p.resourceProviders,
-  inFairfax: r_ff.filter(function(ff) { return ff.name === p.name }).length, 
-  inMooncake: r_mc.filter(function(mc) { return mc.name === p.name }).length, 
-  inBlackforest: r_bf.filter(function(bf) { return bf.name === p.name }).length 
+  inFairfax: r_ff.filter(ff => ff.name === p.name ).length, 
+  inMooncake: r_mc.filter(mc => mc.name === p.name ).length, 
+  inBlackforest: r_bf.filter(bf => bf.name === p.name ).length 
 }});
 dropAndInsert("roleDelta", r_delta);
 
 // Get count of missing roles by sovereign
 var r_missing = {
-  Fairfax: r_delta.filter(function(p) { return !p.preview && p.inFairfax === 0 }).length,
-  Mooncake: r_delta.filter(function(p) { return !p.preview && p.inMooncake === 0 }).length,
-  Blackforest: r_delta.filter(function(p) { return !p.preview && p.inBlackforest === 0 }).length,
-  FairfaxIncludingPreview: r_delta.filter(function(p) { return p.inFairfax === 0 }).length,
-  MooncakeIncludingPreview: r_delta.filter(function(p) { return p.inMooncake === 0 }).length,
-  BlackforestIncludingPreview: r_delta.filter(function(p) { return p.inBlackforest === 0 }).length
+  Fairfax: r_delta.filter(p => !p.preview && p.inFairfax === 0 ).length,
+  Mooncake: r_delta.filter(p => !p.preview && p.inMooncake === 0 ).length,
+  Blackforest: r_delta.filter(p => !p.preview && p.inBlackforest === 0 ).length,
+  FairfaxIncludingPreview: r_delta.filter(p => p.inFairfax === 0 ).length,
+  MooncakeIncludingPreview: r_delta.filter(p => p.inMooncake === 0 ).length,
+  BlackforestIncludingPreview: r_delta.filter(p => p.inBlackforest === 0 ).length
 }
 dropAndInsert("roleMissing", r_missing);
 
@@ -60,13 +60,13 @@ dropAndInsert("roleMissing", r_missing);
 function getRoleMissingInSovereignBit(rpns, r_delta, sovereignBit, includePreview) {
   return rpns[sovereignBit] === 0 ?
     "N/A" :
-    r_delta.filter(function(p) {
-      return p.resourceProviders.indexOf(rpns.namespace) > -1
+    r_delta.filter(p => 
+      p.resourceProviders.indexOf(rpns.namespace) > -1
       && p[sovereignBit] === 0
       && (includePreview || !p.preview)
-    }).length
+    ).length
 }
-r_missing_by_ns = db.resourceProviderDelta.find().map(function(rpns) { return { 
+r_missing_by_ns = db.resourceProviderDelta.find().map(rpns => { return { 
   namespace: rpns.namespace,
   missingInFairfax: getRoleMissingInSovereignBit(rpns, r_delta, "inFairfax", false),
   missingInMooncake: getRoleMissingInSovereignBit(rpns, r_delta, "inMooncake", false),
@@ -79,11 +79,32 @@ dropAndInsert("roleMissingByNamespace", r_missing_by_ns)
 
 // Get count of resource providers missing one or more roles by sovereign
 rpns_missing_r = {
-  Fairfax: r_missing_by_ns.filter(function(ns) { return ns.missingInFairfax > 0 }).length,
-  Mooncake: r_missing_by_ns.filter(function(ns) { return ns.missingInMooncake > 0 }).length,
-  Blackforest: r_missing_by_ns.filter(function(ns) { return ns.missingInBlackforest > 0 }).length,
-  FairfaxIncludingPreview: r_missing_by_ns.filter(function(ns) { return ns.missingInFairfaxIncludingPreview > 0 }).length,
-  MooncakeIncludingPreview: r_missing_by_ns.filter(function(ns) { return ns.missingInMooncakeIncludingPreview > 0 }).length,
-  BlackforestIncludingPreview: r_missing_by_ns.filter(function(ns) { return ns.missingInBlackforestIncludingPreview > 0 }).length
+  Fairfax: r_missing_by_ns.filter(ns => ns.missingInFairfax > 0 ).length,
+  Mooncake: r_missing_by_ns.filter(ns => ns.missingInMooncake > 0 ).length,
+  Blackforest: r_missing_by_ns.filter(ns => ns.missingInBlackforest > 0 ).length,
+  FairfaxIncludingPreview: r_missing_by_ns.filter(ns => ns.missingInFairfaxIncludingPreview > 0 ).length,
+  MooncakeIncludingPreview: r_missing_by_ns.filter(ns => ns.missingInMooncakeIncludingPreview > 0 ).length,
+  BlackforestIncludingPreview: r_missing_by_ns.filter(ns => ns.missingInBlackforestIncludingPreview > 0 ).length
 }
 dropAndInsert("resourceProviderMissingRole", rpns_missing_r);
+
+/////////////////////////
+// Presenting this information
+/////////////////////////
+
+// These many "services" have missing "features" in Fairfax.
+// Considerations: 
+//  * RP used as proxy for service
+//  * Role used as proxy for feature
+//  * Preview in role name used as a proxy for preview features
+db.resourceProviderMissingRole.find()
+
+// Get all the RPs with missing roles in Fairfax
+db.roleMissingByNamespace.find({ missingInFairfax : { $gt : 0 } }, { _id : 0, namespace : 1 , missingInFairfax : 1 })
+
+// Get all the missing roles in Fairfax
+// ACTION: Get status/reason for each one.
+db.roleDelta.find({ resourceProviders: "microsoft.keyvault", inFairfax : 0 }, { _id: 0 })
+
+// ACTION: Get the RBAC guys to introduce VERSIONS
+// ACTION: Get the RBAC guys to standardize approach for preview
