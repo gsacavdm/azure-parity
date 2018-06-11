@@ -33,6 +33,14 @@ pe_delta = pe_ww.map(pe => { return {
 }})
 dropAndInsert("portalExtensionDelta", pe_delta)
 
+// Get count of missing portal extensions by sovereign
+var pe_missing = {
+  Fairfax: pe_delta.filter(pe => pe.inFairfax === 0 ).length,
+  Mooncake: pe_delta.filter(pe => pe.inMooncake === 0 ).length,
+  Blackforest: pe_delta.filter(pe => pe.inBlackforest === 0 ).length,
+}
+dropAndInsert("portalExtensionMissing", pe_missing);
+
 // Get delta for portal extension features
 function getPortalExtensionFeatureInSovereignBit(pe_delta, pef, pef_sov, sovereignBit) {
   portalExtensionInSovereign = pe_delta.filter(pe => pe.name === pef.name)[0][sovereignBit];
@@ -60,3 +68,15 @@ pef_delta = pef_ww.map(pef => { return {
   featureValueInBlackforest: getPortalExtensionFeatureInSovereignBit(pe_delta, pef, pef_bf, "inBlackforest"),
 }})
 dropAndInsert("portalExtensionFeatureDelta", pef_delta)
+
+// Get count of portal extensions with missing features by sovereign
+// pe_missing_pef = TBD
+// dropAndInsert("portalExtensionMissingFeature", pe_missing_pef)
+
+// Get count of missing portal extension features by sovereign
+pef_missing = {
+  Fairfax: pef_delta.filter(pef => pef.featureValueInFairfax !== "N/A" && pef.featureValue !== pef.featureValueInFairfax).length,
+  Mooncake: pef_delta.filter(pef => pef.featureValueInMooncake !== "N/A"  && pef.featureValue !== pef.featureValueInMooncake).length,
+  Blackforest: pef_delta.filter(pef => pef.featureValueInBlackforest !== "N/A" && pef.featureValue !== pef.featureValueInBlackforest).length
+}
+dropAndInsert("portalExtensionFeatureMissing", pef_missing);
