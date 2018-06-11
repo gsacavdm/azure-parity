@@ -2,27 +2,61 @@
 
 // Get portal extension records for each cloud
 // TODO: Improve import so that I can use a find filter and not skip.
-var pe_ww = getRecord("portalExtension", 0).shellEnvironment.extensionsMetadata;
-var pe_ff = getRecord("portalExtension", 1).shellEnvironment.extensionsMetadata;
-var pe_mc = getRecord("portalExtension", 2).shellEnvironment.extensionsMetadata;
-var pe_bf = getRecord("portalExtension", 3).shellEnvironment.extensionsMetadata;
+var pe_ww = getRecord("portalExtension", 0).value;
+var pe_ff = getRecord("portalExtension", 1).value;
+var pe_mc = getRecord("portalExtension", 2).value;
+var pe_bf = getRecord("portalExtension", 3).value;
+
+// Get portal extension features per cloud
+function getPortalExtensionFeatures(pes) {
+  return [].concat.apply([], 
+    pes.map(pe => Object.keys(pe.features ? pe.features: {}).map(f =>
+      { return {
+        name: pe.name,
+        featureName: f,
+        featureValue: pe.features[f],
+      }}
+    ))
+  ).sort()
+}
+var pef_ww = getPortalExtensionFeatures(pe_ww);
+var pef_ff = getPortalExtensionFeatures(pe_ff);
+var pef_mc = getPortalExtensionFeatures(pe_mc);
+var pef_bf = getPortalExtensionFeatures(pe_bf);
 
 // Get delta for portal extensions
-function getExtensionUri(pes, name) {
-  var extension = pes.filter(pe => pe.name === name);
-  if (extension && extension.length > 0) {
-    return extension[0].uri
-  }
-  else {
+pe_delta = pe_ww.map(pe => { return {
+  name: pe.name,
+  inFairfax: pe_ff.filter(pe_sov => pe_sov.name === pe.name).length,
+  inMooncake: pe_mc.filter(pe_sov => pe_sov.name === pe.name).length,
+  inBlackforest: pe_bf.filter(pe_sov => pe_sov.name === pe.name).length,
+}})
+dropAndInsert("portalExtensionDelta", pe_delta)
+
+// Get delta for portal extension features
+function getPortalExtensionFeatureInSovereignBit(pe_delta, pef, pef_sov, sovereignBit) {
+  portalExtensionInSovereign = pe_delta.filter(pe => pe.name === pef.name)[0][sovereignBit];
+  portalExtensionFeatureInSovereign = pef_sov.filter(sovereign => 
+            sovereign.name === pef.name
+          && sovereign.featureName === pef.featureName);
+  
+  if (portalExtensionInSovereign) {
+    if (portalExtensionFeatureInSovereign.length > 0) {
+      return portalExtensionFeatureInSovereign[0].featureValue;
+    }
+    else {
+      return "-Missing-"
+    }
+  } else {
     return "N/A"
   }
 }
-pe_delta = pe_ww.map(pe => { return { 
-  name: pe.name,
-  feedbackEmail: pe.feedbackEmail,
-  uri: pe.uri,
-  uriFairfax: getExtensionUri(pe_ff, pe.name),
-  uriMooncake: getExtensionUri(pe_mc, pe.name),
-  uriBlackforest: getExtensionUri(pe_bf, pe.name)
-}}).sort()
-dropAndInsert("portalExtentionDelta", pe_delta)
+pef_delta = pef_ww.map(pef => { return {
+  name: pef.name,
+  featureName: pef.featureName,
+  featureValue: pef.featureValue,
+  featureValueInFairfax: getPortalExtensionFeatureInSovereignBit(pe_delta, pef, pef_ff, "inFairfax"),
+  featureValueInMooncake: getPortalExtensionFeatureInSovereignBit(pe_delta, pef, pef_mc, "inMooncake"),
+  featureValueInBlackforest: getPortalExtensionFeatureInSovereignBit(pe_delta, pef, pef_bf, "inBlackforest"),
+}})
+dropAndInsert("portalExtensionFeatureDelta", pef_delta)
