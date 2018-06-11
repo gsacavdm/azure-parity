@@ -4,13 +4,14 @@ This repository consists of several tools used to identify gaps between Azure pu
 ## Scope
 | Type | Source | Data Collection | Post-Processing |
 |------|--------|-----------------|-----------------|
-| ARM Resource Providers | Azure Resource Manager API | Program.cs | mongodb.js |
-| ARM Resource Types | Azure Resource Manager API | Program.cs | mongodb.js |
+| ARM Resource Providers | Azure Resource Manager API | Program.cs | mongodb/resourceProvider.js |
+| ARM Resource Types | Azure Resource Manager API | Program.cs | mongodb/resourceProvider.js |
 | ARM API Versions | Azure Resource Manager API | Program.cs | TBD |
-| Role Definitions | Azure Resource Manager API | Program.cs | TBD |
-| Policy Definitions | Azure Resource Manager API | Program.cs | TBD |
-| Portal Extensions | Azure Portal | Program.cs | mongodb.js |
-| Portal Extension Feature Flags | Azure Portal | TBD | TBD |
+| Role Definitions | Azure Resource Manager API | Program.cs | mongodb/role.js |
+| Policy Definitions | Azure Resource Manager API | Program.cs | mongodb/policy.js |
+| Azure Health Support | Azure Resource Manager API | Program.cs | mongodb/health.js |
+| Portal Extensions | Azure Portal | Program.cs | mongodb/portalExtensions.js |
+| Portal Extension Feature Flags | Azure Portal | Program.cs | mongodb/portalExtensions.js |
 
 ## Data Collector
 Data is collected by a dotnet core program. 
@@ -83,9 +84,42 @@ It requires that you have a Key Vault which has Azure AD SP credentials to acces
 The data collector will produce a bunch of json files in `bin\output`.
 These need to be further massaged in MongoDB.
 
-1. Load these files into MongoDB using the mongoimport tool
+1. Load these files into MongoDB using the mongoimport tool:
 
-    >NOTE: At this time only the resourceProvider-* files should be loaded.
-    ><br>They need to be loaded in the following order: Ww, Ff, Mc, Bf
+    ```bash
+    mongoimport --host <hostname> -u <username> -p <password> --ssl --sslAllowInvalidCertificates -d azure-parity -c <collectionName> --file <fileName>-<cloudShortName>.json
+    ```
+    
+    For example:
+    
+    ```bash
+    mongoimport --host azureparity.documents.azure.us:10255 -u azureparityadmin -p X --ssl --sslAllowInvalidCertificates -d azure-parity -c health --file health-Ww.json
+    ```
+
+    * For MongoDB via Azure Cosmos DB, you can obtain the connection string information via **Quick start** > **MongoDB Shell** > **"Connect using MongoDB Shell"**.
+
+    * The collection name should be based on the file name as follows:
+    
+        |File name|Collection Name|
+        |------|------|
+        |resourceProvider-Xx.json|-c resourceProvider|
+        |health-Xx.json|-c health|
+        |role-Xx.json|-c role|
+        |policy-Xx.json|-c policy|
+        |portalextension-Xx.json|-c portal**E**xtension|
+        
+    * Files need to be loaded in the following order: Ww, Ff, Mc, Bf. Note that all the files for a given type, irrespective of the cloud, are loaded into the same collection.
 
 1. In MongoDB, run everything in the mongodb directory.
+
+    ```bash
+    mongo <host> -u <username> -p <password> --ssl --sslAllowInvalidCertificates
+    ```
+
+    And from within that bash instance, copy and paste (manually) the contents of the mongodb/\*.js files **starting with resourceProvider.js**.
+
+ 1. If you want to do offline analysis in Excel, you can export the data using mongoexport:
+
+    ```bash
+    mongoexport --host <hostname> -u <username> -p <password> --ssl --sslAllowInvalidCertificates -d azure-parity -c portalExtensionFeatureMissingByNamespace --type=csv -f "name,missingInFairfax,missingInMooncake,missingInBlackforest" -o portalExtensionFeatureMissingByNamespace.csv
+    ```
