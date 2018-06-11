@@ -25,7 +25,7 @@ rp_o.filter(rp =>
   getMissingFeatureCount(rp, "Mooncake");
   getMissingFeatureCount(rp, "Blackforest");
 })
-dropAndInsert("featuresMissingByNamespace", rp_o);
+dropAndInsert("featureMissingByNamespace", rp_o);
 
 // Get count of missing features by sovereign
 f_missing = {
