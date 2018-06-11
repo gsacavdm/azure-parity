@@ -69,6 +69,23 @@ pef_delta = pef_ww.map(pef => { return {
 }})
 dropAndInsert("portalExtensionFeatureDelta", pef_delta)
 
+// Get count of missing features by extension
+function getMissingInSovereignBit(pe, pef, sovereignBit) {
+  return pe[sovereignBit] === 0 ?
+    "N/A" :
+    pef.filter(f => {
+      return f.name === pe.name
+      && f.featureValue !=- f["featureMissingI" + sovereignBit.slice(1)]
+    }).length
+}
+pef_missing_by_ns = pe_delta.map(pe => { return { 
+  name: pe.name,
+  missingInFairfax: getMissingInSovereignBit(pe, pef_delta, "inFairfax"),
+  missingInMooncake: getMissingInSovereignBit(pe, pef_delta, "inMooncake"),
+  missingInBlackforest: getMissingInSovereignBit(pe, pef_delta, "inBlackforest"),
+}})
+dropAndInsert("portalExtensionFeatureMissingByNamespace", pef_missing_by_ns);
+
 // Get count of portal extensions with missing features by sovereign
 // pe_missing_pef = TBD
 // dropAndInsert("portalExtensionMissingFeature", pe_missing_pef)
