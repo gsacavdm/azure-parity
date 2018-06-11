@@ -3,11 +3,14 @@ function getRecord(collectionName, recordNumber) {
 }
 
 function dropDerivedResourceCollections() {
-  db.getCollectionNames().filter(function(c) {return c.indexOf("resource") > -1 && c !== "resourceProvider"}).forEach(function(c){ db[c].drop()});
+  db.getCollectionNames().filter(c =>  c.indexOf("resource") > -1 && c !== "resourceProvider").forEach(c => { db[c].drop()} );
+}
+function dropDerivedCollections(name) {
+  db.getCollectionNames().filter(c =>  c.indexOf(name) > -1 && c !== name).forEach(c => { db[c].drop()} );
 }
 
 function dropAndInsert(collectionName, collection) {
-  if (db.getCollectionNames().filter(function(c) {return c === collectionName}).length === 1) {
+  if (db.getCollectionNames().filter(c => c === collectionName).length === 1) {
     db[collectionName].drop();
   }
 
