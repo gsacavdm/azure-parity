@@ -104,11 +104,12 @@ These need to be further massaged in MongoDB.
         |------|------|
         |resourceProvider-Xx.json|-c resourceProvider|
         |health-Xx.json|-c health|
-        |role-Xx.json|-c role|
-        |policy-Xx.json|-c policy|
-        |portalextension-Xx.json|-c portal**E**xtension|
-        
+        |roles-Xx.json|-c role|
+        |policies-Xx.json|-c policy|
+        |portalextensions-Xx.json|-c portal**E**xtension|
+            
     * Files need to be loaded in the following order: Ww, Ff, Mc, Bf. Note that all the files for a given type, irrespective of the cloud, are loaded into the same collection.
+    * When importing **portalextensions**, add ```--jsonArray ``` at end of import command. 
 
 1. In MongoDB, run everything in the mongodb directory.
 
