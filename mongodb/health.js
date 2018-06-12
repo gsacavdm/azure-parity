@@ -1,11 +1,7 @@
-// First need to import via mongoimport and specify collection
-
-// Get health records for each cloud
-// TODO: Improve import so that I can use a find filter and not skip.
-var h_ww = getRecord("health", 0).metadata.supportedResourceTypes;
-var h_ff = getRecord("health", 1).metadata.supportedResourceTypes;
-var h_mc = getRecord("health", 2).metadata.supportedResourceTypes;
-var h_bf = getRecord("health", 3).metadata.supportedResourceTypes;
+var h_ww = db.health_Ww.findOne().metadata.supportedResourceTypes;
+var h_ff = db.health_Ff.findOne().metadata.supportedResourceTypes;
+var h_mc = db.health_Mc.findOne().metadata.supportedResourceTypes;
+var h_bf = db.health_Bf.findOne().metadata.supportedResourceTypes;
 
 // Get delta for health
 h_delta = h_ww.map(h => { return { 

@@ -1,12 +1,5 @@
-// First need to import the role files
-// via mongoimport and to the role collection
-
-// Get policy records for each cloud
-// TODO: Improve import so that I can use a find filter and not skip.
-function getRoleDefinition(arr, i) { 
-  return arr.find()
-    .skip(i)
-    .limit(1)[0]
+function getRoleDefinition(arr) { 
+  return arr.findOne()
     .value
     .filter(r => r.properties.type !== "CustomRole" )
     .map(function(r)
@@ -28,10 +21,10 @@ function getRoleDefinition(arr, i) {
       }}
     ) 
 }
-var r_ww = getRoleDefinition(db.role,0);
-var r_ff = getRoleDefinition(db.role,1);
-var r_mc = getRoleDefinition(db.role,2);
-var r_bf = getRoleDefinition(db.role,3);
+var r_ww = getRoleDefinition(db.role_Ww);
+var r_ff = getRoleDefinition(db.role_Ff);
+var r_mc = getRoleDefinition(db.role_Mc);
+var r_bf = getRoleDefinition(db.role_Bf);
 
 // Get delta for roles
 var r_delta = r_ww.map(p => { return { 

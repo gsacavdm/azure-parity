@@ -1,7 +1,3 @@
-function getRecord(collectionName, recordNumber) {
-  return db[collectionName].find().skip(recordNumber).limit(1)[0]
-}
-
 function dropDerivedResourceCollections() {
   db.getCollectionNames().filter(c =>  c.indexOf("resource") > -1 && c !== "resourceProvider").forEach(c => { db[c].drop()} );
 }

@@ -1,12 +1,5 @@
-// First need to import the policy files
-// via mongoimport and to the policy collection
-
-// Get policy records for each cloud
-// TODO: Improve import so that I can use a find filter and not skip.
 function getPolicyDefinition(arr, i) { 
-  return arr.find()
-    .skip(i)
-    .limit(1)[0]
+  return arr.findOne()
     .value
     .map(p =>
       { return {
@@ -28,10 +21,10 @@ function getPolicyDefinition(arr, i) {
       }}
     ) 
 }
-var p_ww = getPolicyDefinition(db.policy,0);
-var p_ff = getPolicyDefinition(db.policy,1);
-var p_mc = getPolicyDefinition(db.policy,2);
-var p_bf = getPolicyDefinition(db.policy,3);
+var p_ww = getPolicyDefinition(db.policy_Ww);
+var p_ff = getPolicyDefinition(db.policy_Ff);
+var p_mc = getPolicyDefinition(db.policy_Mc);
+var p_bf = getPolicyDefinition(db.policy_Bf);
 
 // Get delta for policies
 var p_delta = p_ww.map(p => { return { 

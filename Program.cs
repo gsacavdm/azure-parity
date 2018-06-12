@@ -61,35 +61,35 @@ namespace azure_parity
                     Console.WriteLine("Getting resource providers...");
                     var resourceProvider = GetResourceProviders(armHttpClient, armResource).Result;
                     //Console.WriteLine(resourceProvider);
-                    WriteToFile("resourceProvider-" + clouds[i] + ".json", resourceProvider);
+                    WriteToFile("resourceProvider_" + clouds[i] + ".json", resourceProvider);
                 }
 
                 if (Array.Exists(whatToGet, x => x == "policies")) {
                     Console.WriteLine("Getting policies...");
                     var policies = GetPolicies(armHttpClient, armResource, subscriptionId).Result;
                     //Console.WriteLine(policies);
-                    WriteToFile("policies-" + clouds[i] + ".json", policies);
+                    WriteToFile("policy_" + clouds[i] + ".json", policies);
                 }
 
                 if (Array.Exists(whatToGet, x => x == "roles")) {
                     Console.WriteLine("Getting roles...");
                     var roles = GetRoles(armHttpClient, armResource, subscriptionId).Result;
                     //Console.WriteLine(roles);
-                    WriteToFile("roles-" + clouds[i] + ".json", roles);
+                    WriteToFile("role_" + clouds[i] + ".json", roles);
                 }
 
                 if (Array.Exists(whatToGet, x => x == "health")) {
                     Console.WriteLine("Getting health...");
                     var health = GetHealth(armHttpClient, armResource, subscriptionId).Result;
                     //Console.WriteLine(health);
-                    WriteToFile("health-" + clouds[i] + ".json", health);
+                    WriteToFile("health_" + clouds[i] + ".json", health);
                 }
 
                 if (Array.Exists(whatToGet, x => x == "vmextensions")) {
                     Console.WriteLine("Getting VM extensions...");
                     var vmExtensions = GetVmExtensions(armHttpClient, armResource, subscriptionId).Result;
                     //Console.WriteLine(vmExtensions);
-                    WriteToFile("vmextensions-" + clouds[i] + ".json", vmExtensions); 
+                    WriteToFile("vmExtension_" + clouds[i] + ".json", vmExtensions); 
                 }  
 
                 var portalHttpClient = GetHttpClient();
@@ -98,7 +98,7 @@ namespace azure_parity
                     Console.WriteLine("Getting portal extensions...");
                     var portalExtensions = GetPortalExtensions(portalHttpClient, portalEndpoints[i]).Result;
                     //Console.WriteLine(portalExtensions);
-                    WriteToFile("portalextensions-" + clouds[i] + ".json", portalExtensions);
+                    WriteToFile("portalExtension_" + clouds[i] + ".json", portalExtensions);
                 }
 
                 Console.WriteLine("Done!");

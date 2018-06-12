@@ -84,42 +84,47 @@ It requires that you have a Key Vault which has Azure AD SP credentials to acces
 The data collector will produce a bunch of json files in `bin\output`.
 These need to be further massaged in MongoDB.
 
-1. Load these files into MongoDB using the mongoimport tool:
+1. Load these files into MongoDB using the mongoimport tool.
+
+    >NOTE: If you are using Azure Cosmos DB, obtain the database's
+    >hostname, username and password in the Azure portal by navigating
+    >to **Quick start** > **MongoDB Shell** > **Connect using MongoDB Shell**.
+ 
 
     ```bash
-    mongoimport --host <hostname> -u <username> -p <password> --ssl --sslAllowInvalidCertificates -d azure-parity -c <collectionName> --file <fileName>-<cloudShortName>.json
-    ```
-    
-    For example:
-    
-    ```bash
-    mongoimport --host azureparity.documents.azure.us:10255 -u azureparityadmin -p X --ssl --sslAllowInvalidCertificates -d azure-parity -c health --file health-Ww.json
-    ```
+    $HOSTNAME=replace_with_hostname
+    $USERNAME=replace_with_username
+    $PASSWORD=replace_with_password
+    $DATABASE=azure-parity
 
-    * For MongoDB via Azure Cosmos DB, you can obtain the connection string information via **Quick start** > **MongoDB Shell** > **"Connect using MongoDB Shell"**.
-
-    * The collection name should be based on the file name as follows:
+    cd azure-parity/bin/output
     
-        |File name|Collection Name|
-        |------|------|
-        |resourceProvider-Xx.json|-c resourceProvider|
-        |health-Xx.json|-c health|
-        |role-Xx.json|-c role|
-        |policy-Xx.json|-c policy|
-        |portalextension-Xx.json|-c portal**E**xtension|
-        
-    * Files need to be loaded in the following order: Ww, Ff, Mc, Bf. Note that all the files for a given type, irrespective of the cloud, are loaded into the same collection.
+    #Confirm this command outputs all the json files
+    ls
+
+    find *.json -exec mongoimport --host $HOSTNAME -u $USERNAME -p $PASSWORD --ssl --sslAllowInvalidCertificates -d azure-parity --file {} \;
+    ```
 
 1. In MongoDB, run everything in the mongodb directory.
 
-    ```bash
-    mongo <host> -u <username> -p <password> --ssl --sslAllowInvalidCertificates
-    ```
+    1. First connect to mongo using the following command:
 
-    And from within that bash instance, copy and paste (manually) the contents of the mongodb/\*.js files **starting with resourceProvider.js**.
+        ```bash
+        mongo $HOSTNAME -u $USERNAME -p $PASSWORD --ssl --sslAllowInvalidCertificates
+        ```
+
+    1. From within that bash instance, copy and paste (manually) the contents of the mongodb/\*.js files in the following order:
+    
+        1. util.js
+        1. resourceProvider.js
+        1. policy.js
+        1. role.js
+        1. health.js
+        1. portalExtension.js
+        1. feature.js
 
  1. If you want to do offline analysis in Excel, you can export the data using mongoexport:
 
     ```bash
-    mongoexport --host <hostname> -u <username> -p <password> --ssl --sslAllowInvalidCertificates -d azure-parity -c portalExtensionFeatureMissingByNamespace --type=csv -f "name,missingInFairfax,missingInMooncake,missingInBlackforest" -o portalExtensionFeatureMissingByNamespace.csv
+    mongoexport --host $HOSTNAME -u $USERNAME -p $PASSWORD --ssl --sslAllowInvalidCertificates -d azure-parity -c portalExtensionFeatureMissingByNamespace --type=csv -f "name,missingInFairfax,missingInMooncake,missingInBlackforest" -o portalExtensionFeatureMissingByNamespace.csv
     ```

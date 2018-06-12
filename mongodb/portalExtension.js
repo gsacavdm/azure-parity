@@ -1,11 +1,7 @@
-// First need to import via mongoimport and specify collection
-
-// Get portal extension records for each cloud
-// TODO: Improve import so that I can use a find filter and not skip.
-var pe_ww = getRecord("portalExtension", 0).value;
-var pe_ff = getRecord("portalExtension", 1).value;
-var pe_mc = getRecord("portalExtension", 2).value;
-var pe_bf = getRecord("portalExtension", 3).value;
+var pe_ww = db.portalExtension_Ww.findOne().value;
+var pe_ff = db.portalExtension_Ff.findOne().value;
+var pe_mc = db.portalExtension_Mc.findOne().value;
+var pe_bf = db.portalExtension_Bf.findOne().value;
 
 // Get portal extension features per cloud
 function getPortalExtensionFeatures(pes) {

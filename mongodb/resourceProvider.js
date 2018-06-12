@@ -1,11 +1,7 @@
-// First need to import via mongoimport and specify collection
-
-// Get RP records for each cloud
-// TODO: Improve import so that I can use a find filter and not skip.
-var rp_ww = getRecord("resourceProvider", 0).value;
-var rp_ff = getRecord("resourceProvider", 1).value;
-var rp_mc = getRecord("resourceProvider", 2).value;
-var rp_bf = getRecord("resourceProvider", 3).value;
+var rp_ww = db.resourceProvider_Ww.findOne().value;
+var rp_ff = db.resourceProvider_Ff.findOne().value;
+var rp_mc = db.resourceProvider_Mc.findOne().value;
+var rp_bf = db.resourceProvider_Bf.findOne().value;
 
 // Get list of namespaces per cloud
 function getNamespaces(rps) { 
