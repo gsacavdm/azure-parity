@@ -71,7 +71,7 @@ function getMissingInSovereignBit(pe, pef, sovereignBit) {
     "N/A" :
     pef.filter(f => {
       return f.name === pe.name
-      && f.featureValue !=- f["featureMissingI" + sovereignBit.slice(1)]
+      && f.featureValue !== f["featureValueI" + sovereignBit.slice(1)]
     }).length
 }
 pef_missing_by_ns = pe_delta.map(pe => { return { 
@@ -81,10 +81,6 @@ pef_missing_by_ns = pe_delta.map(pe => { return {
   missingInBlackforest: getMissingInSovereignBit(pe, pef_delta, "inBlackforest"),
 }})
 dropAndInsert("portalExtensionFeatureMissingByNamespace", pef_missing_by_ns);
-
-// Get count of portal extensions with missing features by sovereign
-// pe_missing_pef = TBD
-// dropAndInsert("portalExtensionMissingFeature", pe_missing_pef)
 
 // Get count of missing portal extension features by sovereign
 pef_missing = {
