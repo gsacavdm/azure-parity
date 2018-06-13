@@ -34,19 +34,30 @@ var p_delta = p_ww.map(p => { return {
   deprecated: p.deprecated,
   resourceProviders: p.resourceProviders,
   inFairfax: p_ff.filter(ff => ff.name === p.name ).length, 
+  allRpsInFairfax: allRpsAvailable(p.resourceProviders, "inFairfax"),
   inMooncake: p_mc.filter(mc => mc.name === p.name ).length, 
-  inBlackforest: p_bf.filter(bf => bf.name === p.name ).length 
+  allRpsInMooncake: allRpsAvailable(p.resourceProviders, "inMooncake"),
+  inBlackforest: p_bf.filter(bf => bf.name === p.name ).length,
+  allRpsInBlackforest: allRpsAvailable(p.resourceProviders, "inBlackforest")
 }});
 dropAndInsert("policyDelta", p_delta);
 
 // Get count of missing policies by sovereign
+function getMissingPolicyCount(policies, sovereignBit, includePreview){
+  return policies.filter(p => 
+    p[sovereignBit] === 0
+    && p["allRpsI" + sovereignBit.slice(1)]
+    && !p.deprecated
+    && (includePreview || !p.preview)
+  ).length
+}
 var p_missing = {
-  Fairfax: p_delta.filter(p => !p.deprecated && !p.preview && p.inFairfax === 0 ).length,
-  Mooncake: p_delta.filter(p => !p.deprecated && !p.preview && p.inMooncake === 0 ).length,
-  Blackforest: p_delta.filter(p => !p.deprecated && !p.preview && p.inBlackforest === 0 ).length,
-  FairfaxIncludingPreview: p_delta.filter(p => !p.deprecated && p.inFairfax === 0 ).length,
-  MooncakeIncludingPreview: p_delta.filter(p => !p.deprecated && p.inMooncake === 0 ).length,
-  BlackforestIncludingPreview: p_delta.filter(p => !p.deprecated && p.inBlackforest === 0 ).length
+  Fairfax: getMissingPolicyCount(p_delta, "inFairfax"),
+  Mooncake: getMissingPolicyCount(p_delta, "inMooncake"),
+  Blackforest: getMissingPolicyCount(p_delta, "inBlackforest"),
+  FairfaxIncludingPreview: getMissingPolicyCount(p_delta, "inFairfax", true),
+  MooncakeIncludingPreview: getMissingPolicyCount(p_delta, "inMooncake", true),
+  BlackforestIncludingPreview: getMissingPolicyCount(p_delta, "inBlackforest", true)
 }
 dropAndInsert("policyMissing", p_missing);
 
@@ -57,6 +68,7 @@ function getPolicyMissingInSovereignBit(rpns, p_delta, sovereignBit, includePrev
     p_delta.filter(p => 
       p.resourceProviders.indexOf(rpns.namespace) > -1
       && p[sovereignBit] === 0
+      && p["allRpsI" + sovereignBit.slice(1)]
       && (includePreview || !p.preview)
       && !p.deprecated
     ).length
@@ -96,11 +108,27 @@ dropAndInsert("resourceProviderMissingPolicy", rpns_missing_p);
 db.resourceProviderMissingPolicy.find()
 
 // Get all the RPs with missing policies in Fairfax
-db.policyMissingByNamespace.find({ missingInFairfax : { $gt : 0 } }, { _id : 0, namespace : 1 , missingInFairfax : 1 })
+db.policyMissingByNamespace.find({ 
+  missingInFairfax : { $gt : 0 } 
+}, { 
+  _id : 0, 
+  namespace : 1 , 
+  missingInFairfax : 1 
+})
 
 // Get all the missing policies in Fairfax
 // ACTION: Get status/reason for each one.
-db.policyDelta.find({ resourceProviders: "microsoft.sql", inFairfax : 0 }, { _id: 0 })
+db.policyDelta.find({ 
+  resourceProviders: "microsoft.sql", 
+  inFairfax : 0, 
+  allRpsInFairfax: true, 
+  preview: false, 
+  deprecated: false
+}, {
+  _id: 0,
+  name: 1,
+  displayName: 1
+})
 
 // ACTION: Get the policy guys to introduce VERSIONS
 // ACTION: Get the policy guys to standardize approach for preview

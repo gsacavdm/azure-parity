@@ -27,25 +27,35 @@ var r_mc = getRoleDefinition(db.role_Mc);
 var r_bf = getRoleDefinition(db.role_Bf);
 
 // Get delta for roles
-var r_delta = r_ww.map(p => { return { 
-  name: p.name, 
-  roleName: p.roleName, 
-  preview: p.preview, 
-  resourceProviders: p.resourceProviders,
-  inFairfax: r_ff.filter(ff => ff.name === p.name ).length, 
-  inMooncake: r_mc.filter(mc => mc.name === p.name ).length, 
-  inBlackforest: r_bf.filter(bf => bf.name === p.name ).length 
+var r_delta = r_ww.map(r => { return { 
+  name: r.name, 
+  roleName: r.roleName, 
+  preview: r.preview, 
+  resourceProviders: r.resourceProviders,
+  inFairfax: r_ff.filter(ff => ff.name === r.name ).length,
+  allRpsInFairfax: allRpsAvailable(r.resourceProviders, "inFairfax"),
+  inMooncake: r_mc.filter(mc => mc.name === r.name ).length,
+  allRpsInMooncake: allRpsAvailable(r.resourceProviders, "inMooncake"),
+  inBlackforest: r_bf.filter(bf => bf.name === r.name ).length,
+  allRpsInBlackforest: allRpsAvailable(r.resourceProviders, "inBlackforest")
 }});
 dropAndInsert("roleDelta", r_delta);
 
 // Get count of missing roles by sovereign
+function getMissingRoleCount(roles, sovereignBit, includePreview){
+  return roles.filter(r => 
+    r[sovereignBit] === 0
+    && r["allRpsI" + sovereignBit.slice(1)]
+    && (includePreview || !r.preview)
+  ).length
+}
 var r_missing = {
-  Fairfax: r_delta.filter(p => !p.preview && p.inFairfax === 0 ).length,
-  Mooncake: r_delta.filter(p => !p.preview && p.inMooncake === 0 ).length,
-  Blackforest: r_delta.filter(p => !p.preview && p.inBlackforest === 0 ).length,
-  FairfaxIncludingPreview: r_delta.filter(p => p.inFairfax === 0 ).length,
-  MooncakeIncludingPreview: r_delta.filter(p => p.inMooncake === 0 ).length,
-  BlackforestIncludingPreview: r_delta.filter(p => p.inBlackforest === 0 ).length
+  Fairfax: getMissingRoleCount(r_delta, "inFairfax"),
+  Mooncake: getMissingRoleCount(r_delta, "inMooncake"),
+  Blackforest: getMissingRoleCount(r_delta, "inBlackforest"),
+  FairfaxIncludingPreview: getMissingRoleCount(r_delta, "inFairfax", true),
+  MooncakeIncludingPreview: getMissingRoleCount(r_delta, "inMooncake", true),
+  BlackforestIncludingPreview: getMissingRoleCount(r_delta, "inBlackforest", true)
 }
 dropAndInsert("roleMissing", r_missing);
 
@@ -53,10 +63,11 @@ dropAndInsert("roleMissing", r_missing);
 function getRoleMissingInSovereignBit(rpns, r_delta, sovereignBit, includePreview) {
   return rpns[sovereignBit] === 0 ?
     "N/A" :
-    r_delta.filter(p => 
-      p.resourceProviders.indexOf(rpns.namespace) > -1
-      && p[sovereignBit] === 0
-      && (includePreview || !p.preview)
+    r_delta.filter(r => 
+      r.resourceProviders.indexOf(rpns.namespace) > -1
+      && r[sovereignBit] === 0
+      && r["allRpsI" + sovereignBit.slice(1)]
+      && (includePreview || !r.preview)
     ).length
 }
 r_missing_by_ns = db.resourceProviderDelta.find().map(rpns => { return { 
@@ -93,11 +104,26 @@ dropAndInsert("resourceProviderMissingRole", rpns_missing_r);
 db.resourceProviderMissingRole.find()
 
 // Get all the RPs with missing roles in Fairfax
-db.roleMissingByNamespace.find({ missingInFairfax : { $gt : 0 } }, { _id : 0, namespace : 1 , missingInFairfax : 1 })
+db.roleMissingByNamespace.find({ 
+  missingInFairfax : { $gt : 0 } 
+}, { 
+  _id : 0, 
+  namespace : 1 , 
+  missingInFairfax : 1 
+})
 
 // Get all the missing roles in Fairfax
 // ACTION: Get status/reason for each one.
-db.roleDelta.find({ resourceProviders: "microsoft.keyvault", inFairfax : 0 }, { _id: 0 })
+db.roleDelta.find({ 
+  resourceProviders: "microsoft.network", 
+  inFairfax : 0, 
+  allRpsInFairfax: true, 
+  preview: false, 
+}, {
+  _id: 0,
+  name: 1,
+  roleName: 1
+})
 
 // ACTION: Get the RBAC guys to introduce VERSIONS
 // ACTION: Get the RBAC guys to standardize approach for preview
