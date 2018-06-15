@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: azparity-rps
+  labels:
+    app: azparity-rps
+spec:
+  containers:
+  - name: cloudcfg
+    image: gsacavdm/azparity-cloudcfg:0.0.2
+    volumeMounts:
+    - name: config
+      mountPath: /cloudcfg
+    env:
+    - name: CONFIG_DIR_PATH
+      value: /cloudcfg
+  - name: collect
+    image: gsacavdm/azparity-collect-rps:0.0.2
+    volumeMounts:
+    - name: config
+      mountPath: /cloudcfg
+    - name: data
+      mountPath: /clouddata
+    env:
+    - name: CONFIG_DIR_PATH
+      value: /cloudcfg
+    - name: DATA_DIR_PATH
+      value: /clouddata
+  volumes:
+  - name: config
+  - name: data
+

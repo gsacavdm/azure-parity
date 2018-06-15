@@ -128,3 +128,19 @@ These need to be further massaged in MongoDB.
     ```bash
     mongoexport --host $HOSTNAME -u $USERNAME -p $PASSWORD --ssl --sslAllowInvalidCertificates -d azure-parity -c portalExtensionFeatureMissingByNamespace --type=csv -f "name,missingInFairfax,missingInMooncake,missingInBlackforest" -o portalExtensionFeatureMissingByNamespace.csv
     ```
+
+# Containerize!
+
+Containers:
+
+| name | description |
+|------|--------------|
+| azparity-cloudcfg:0.1 | Obtains the cloud config values from KeyVault |
+| azparity-rps:0.1 | Collects resource provider data |
+| azparity-roles:0.1 | Collects role data | 
+| ... | ... |
+
+```bash
+docker build . -t azparity-cloudcfg:0.1
+docker run -it --name cloudcfg azparity-cloudcfg:0.1 bash
+```
