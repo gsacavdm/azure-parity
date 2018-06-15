@@ -15,7 +15,8 @@ namespace azure_parity
     class Program
     {
         static bool Debug = true;
-        static string WhatToGet = "rps,policies,roles,health,vmextensions,portalextensions";
+        //static string WhatToGet = "rps,policies,roles,health,monitor,vmextensions,portalextensions";
+        static string WhatToGet = "monitor";
 
         static void Main(string[] args)
         {
@@ -83,6 +84,13 @@ namespace azure_parity
                     var health = GetHealth(armHttpClient, armResource, subscriptionId).Result;
                     //Console.WriteLine(health);
                     WriteToFile("health_" + clouds[i] + ".json", health);
+                }
+
+                if (Array.Exists(whatToGet, x => x == "monitor")) {
+                    Console.WriteLine("Getting monitor...");
+                    var monitor = GetMonitor(armHttpClient, armResource, subscriptionId).Result;
+                    //Console.WriteLine(monitor);
+                    WriteToFile("monitor_" + clouds[i] + ".json", monitor);
                 }
 
                 if (Array.Exists(whatToGet, x => x == "vmextensions")) {
@@ -158,6 +166,57 @@ namespace azure_parity
                     azureEndpoint, subscriptionId, healthApiVersion);
             if (Debug) Console.WriteLine("HealthEndpoint: " + healthEndpoint);
             return await httpClient.GetStringAsync(healthEndpoint);
+        }
+
+        public static async Task<string> GetMonitor(HttpClient httpClient, string azureEndpoint, string subscriptionId) {
+            var apiVersion = "2017-05-01";
+            var resourceProviderEndpointFmt = 
+                "{0}providers";
+            var operationsEndpointFmt = 
+                "{0}subscriptions/{1}/providers/{2}/operations/{3}/";
+
+            var resourceProviderEndpoint = String.Format(resourceProviderEndpointFmt, azureEndpoint);
+            if (Debug) Console.WriteLine("ResourceProviderEndpoint: " + resourceProviderEndpoint);
+            var resourceProviders =  JObject.Parse(await httpClient.GetStringAsync(resourceProviderEndpoint + "?api-version=" + apiVersion))["value"];
+
+            var monitor = new JArray();
+
+            foreach(var resourceProvider in resourceProviders) {
+                foreach(var resourceType in resourceProvider["resourceTypes"]) {
+                    try {
+                        var operationsEndpoint = String.Format(
+                            operationsEndpointFmt, subscriptionId, 
+                            resourceProvider["namespace"], resourceType["resourceType"]);
+
+                        if (Debug) Console.WriteLine("OperationsEndpoint: " + operationsEndpoint);
+                        var operations = JArray.Parse(await httpClient.GetStringAsync(operationsEndpoint + "?api-version=" + apiVersion));
+
+                        return operations.ToString();
+                        /*
+                        foreach(var type in types) {
+                            var versionsEndpoint = String.Format(versionsEndpointFmt, typesEndpoint, type["name"]);
+                            if (Debug) Console.WriteLine("VersionsEndpoint: " + versionsEndpoint);
+                            var versions = JArray.Parse(await httpClient.GetStringAsync(versionsEndpoint + "?api-version=" + apiVersion));
+
+                            foreach (var version in versions) {
+                                var vmExtension = new JObject();
+                                vmExtension["PublisherName"] = publisher["name"];
+                                vmExtension["TypeName"] = type["name"];
+                                vmExtension["Version"] = version["name"];
+                                vmExtensions.Add(vmExtension);
+                            }
+                        }
+                        */
+                    } catch (Exception) {
+                        // TODO: Narrow the scope of the try/catch and exception. Investigate why this errors out.
+                        // Some publishers error out when getting their extension types
+                        // for example Microsoft.Azure.NetworkWatcher.Edp
+                        Console.Write("WARN: Exception occurred");
+                    }
+                }
+            }
+
+            return monitor.ToString();
         }
 
         public static async Task<string> GetVmExtensions(HttpClient httpClient, string azureEndpoint, string subscriptionId) {

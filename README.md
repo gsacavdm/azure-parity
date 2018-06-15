@@ -92,10 +92,10 @@ These need to be further massaged in MongoDB.
  
 
     ```bash
-    $HOSTNAME=replace_with_hostname
-    $USERNAME=replace_with_username
-    $PASSWORD=replace_with_password
-    $DATABASE=azure-parity
+    HOSTNAME=replace_with_hostname
+    USERNAME=replace_with_username
+    PASSWORD=replace_with_password
+    DATABASE=azure-parity
 
     cd azure-parity/bin/output
     
@@ -120,6 +120,7 @@ These need to be further massaged in MongoDB.
         1. policy.js
         1. role.js
         1. health.js
+        1. monitor.js
         1. portalExtension.js
         1. feature.js
 
