@@ -267,7 +267,9 @@ namespace azure_parity
                 }
             }
 
-            return vmExtensions.ToString();
+            var wrapper = new JObject();
+            wrapper["value"] = vmExtensions;
+            return wrapper.ToString();
         }
 
         public static async Task<string> GetPortalExtensions(HttpClient httpClient, string portalEndpoint) {
