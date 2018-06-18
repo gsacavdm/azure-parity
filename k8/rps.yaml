@@ -8,6 +8,7 @@ spec:
   containers:
   - name: cloudcfg
     image: gsacavdm/azparity-cloudcfg:0.0.2
+    imagePullPolicy: Always
     volumeMounts:
     - name: config
       mountPath: /cloudcfg
@@ -31,6 +32,7 @@ spec:
           key: vault-base-url
   - name: collect
     image: gsacavdm/azparity-collect-rps:0.0.2
+    imagePullPolicy: Always
     volumeMounts:
     - name: config
       mountPath: /cloudcfg
