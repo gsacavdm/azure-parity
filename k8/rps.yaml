@@ -14,6 +14,21 @@ spec:
     env:
     - name: CONFIG_DIR_PATH
       value: /cloudcfg
+    - name: CLIENT_ID
+      valueFrom:
+        secretKeyRef:
+          name: keyvault
+          key: client-id
+    - name: CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: keyvault
+          key: client-secret
+    - name: VAULT_BASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: keyvault
+          key: vault-base-url
   - name: collect
     image: gsacavdm/azparity-collect-rps:0.0.2
     volumeMounts:
