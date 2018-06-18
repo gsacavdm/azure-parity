@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Linq;
 
 using Microsoft.Azure.KeyVault;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
@@ -55,7 +56,7 @@ namespace azure_parity
 
                 Console.WriteLine("Getting ARM access token...");
                 var accessToken = GetAccessToken(authority, armResource, clientId, clientSecret).Result;
-                //Console.WriteLine(accessToken);
+                Console.WriteLine(accessToken);
                 var armHttpClient = GetHttpClient(accessToken);
 
                 if (Array.Exists(whatToGet, x => x == "rps")) {
@@ -169,49 +170,70 @@ namespace azure_parity
         }
 
         public static async Task<string> GetMonitor(HttpClient httpClient, string azureEndpoint, string subscriptionId) {
-            var apiVersion = "2017-05-01";
+            var resourceProviderApiVersion = "2017-05-01";
             var resourceProviderEndpointFmt = 
                 "{0}providers";
+
             var operationsEndpointFmt = 
-                "{0}subscriptions/{1}/providers/{2}/operations/{3}/";
+                "{0}providers/{1}/operations";
 
             var resourceProviderEndpoint = String.Format(resourceProviderEndpointFmt, azureEndpoint);
             if (Debug) Console.WriteLine("ResourceProviderEndpoint: " + resourceProviderEndpoint);
-            var resourceProviders =  JObject.Parse(await httpClient.GetStringAsync(resourceProviderEndpoint + "?api-version=" + apiVersion))["value"];
+            var resourceProviders =  JObject.Parse(await httpClient.GetStringAsync(resourceProviderEndpoint + "?api-version=" + resourceProviderApiVersion))["value"];
 
             var monitor = new JArray();
 
-            foreach(var resourceProvider in resourceProviders) {
-                foreach(var resourceType in resourceProvider["resourceTypes"]) {
-                    try {
-                        var operationsEndpoint = String.Format(
-                            operationsEndpointFmt, subscriptionId, 
-                            resourceProvider["namespace"], resourceType["resourceType"]);
+            foreach(var resourceProviderJson in resourceProviders) {
+                var resourceProvider = resourceProviderJson["namespace"].Value<string>();
+                
+                if (!resourceProvider.StartsWith("Microsoft", StringComparison.OrdinalIgnoreCase)) 
+                    continue;
+                
+                var operations = new JObject();
 
-                        if (Debug) Console.WriteLine("OperationsEndpoint: " + operationsEndpoint);
-                        var operations = JArray.Parse(await httpClient.GetStringAsync(operationsEndpoint + "?api-version=" + apiVersion));
+                try {
+                    var operationsApiVersion = resourceProviderJson.SelectToken("$.resourceTypes[?(@.resourceType == 'operations')].apiVersions[0]");
+                    
+                    if (operationsApiVersion != null) {
+                        var operationsEndpoint = String.Format(operationsEndpointFmt, azureEndpoint, resourceProvider);
+                        if (Debug) Console.WriteLine("OperationsEndpoint: " + operationsEndpoint + "?api-version=" + operationsApiVersion);
+                        operations = JObject.Parse(await httpClient.GetStringAsync(operationsEndpoint + "?api-version=" + operationsApiVersion));
+                    } else {
+                        Console.WriteLine("WARN: No operations API. ResourceProvider=" +resourceProvider);
+                    }
+                } catch (Exception ex) {
+                    // TODO: Narrow the scope of the try/catch and exception. Investigate why this errors out.
+                    // Some publishers error out when getting their extension types
+                    // for example Microsoft.Azure.NetworkWatcher.Edp
+                    Console.WriteLine("WARN: Exception occurred. " + ex.Message);
+                }
 
-                        return operations.ToString();
-                        /*
-                        foreach(var type in types) {
-                            var versionsEndpoint = String.Format(versionsEndpointFmt, typesEndpoint, type["name"]);
-                            if (Debug) Console.WriteLine("VersionsEndpoint: " + versionsEndpoint);
-                            var versions = JArray.Parse(await httpClient.GetStringAsync(versionsEndpoint + "?api-version=" + apiVersion));
+                foreach(var resourceTypeJson in resourceProviderJson["resourceTypes"]) {
+                    var resourceType = resourceTypeJson["resourceType"].Value<string>();
 
-                            foreach (var version in versions) {
-                                var vmExtension = new JObject();
-                                vmExtension["PublisherName"] = publisher["name"];
-                                vmExtension["TypeName"] = type["name"];
-                                vmExtension["Version"] = version["name"];
-                                vmExtensions.Add(vmExtension);
-                            }
+                    var metricsJson = new JObject();
+                    metricsJson["namespace"] = resourceProvider;
+                    metricsJson["resourceType"] = resourceType;
+
+                    var metricsOperations = new JArray();
+                    if (operations["value"] != null) {
+                        var tmp = operations["value"].Children().Where(o => 
+                            o["name"] != null 
+                            && o["name"].Value<string>().Contains("Microsoft.Insights", StringComparison.OrdinalIgnoreCase)
+                            && o["name"].Value<string>().Contains(resourceProvider + "/" + resourceType + "/", StringComparison.OrdinalIgnoreCase));
+                            
+                        //Console.WriteLine(String.Format("Found {0} for {1}: ", tmp.Count(), resourceType));
+                        if (tmp.Any()) {
+                            metricsOperations.Add(tmp);
                         }
-                        */
-                    } catch (Exception) {
-                        // TODO: Narrow the scope of the try/catch and exception. Investigate why this errors out.
-                        // Some publishers error out when getting their extension types
-                        // for example Microsoft.Azure.NetworkWatcher.Edp
-                        Console.Write("WARN: Exception occurred");
+                    }
+                    else {
+                        metricsOperations = new JArray();
+                    }
+
+                    if (metricsOperations.Any()) {
+                        metricsJson["metricsOperations"] = metricsOperations;
+                        monitor.Add(metricsJson);
                     }
                 }
             }
