@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: keyvault
+type: Opaque
+data:
+  tenant-id: <BASE_64_ENCODED_VALUE>
+  client-id: <BASE_64_ENCODED_VALUE>
+  client-secret: <BASE_64_ENCODED_VALUE>
+  vault-base-url: <BASE_64_ENCODED_VALUE>
