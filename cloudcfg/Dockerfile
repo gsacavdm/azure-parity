@@ -4,12 +4,12 @@ COPY . /app
 WORKDIR /app/cloudcfg
 RUN dotnet restore
 
-RUN dotnet publish -r linux-x64
+RUN dotnet publish -c Release -r alpine-x64 -o bin/out
 
-FROM microsoft/dotnet:2.1-runtime
+FROM microsoft/dotnet:2.1-runtime-deps-alpine
 LABEL AUTHOR=gsacavdm
 
-COPY --from=0 /app/cloudcfg/bin/Debug/netcoreapp2.1/linux-x64 /app
+COPY --from=0 /app/cloudcfg/bin/out /app
 
 WORKDIR /app
-ENTRYPOINT [ "sh"]
+ENTRYPOINT [ "/app/cloudcfg"]
