@@ -11,5 +11,4 @@ RUN apt-get update \
 COPY upload /script
 
 WORKDIR /clouddata
-#ENTRYPOINT [ "/script/upload.sh"] 
-ENTRYPOINT [ "sleep", "1d"] 
+ENTRYPOINT [ "/script/upload.sh"] 
