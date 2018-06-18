@@ -43,6 +43,30 @@ spec:
       value: /cloudcfg
     - name: DATA_DIR_PATH
       value: /clouddata
+  - name: upload
+    image: gsacavdm/azparity-upload:0.0.2
+    imagePullPolicy: Always
+    volumeMounts:
+    - name: data
+      mountPath: /clouddata
+    env:
+    - name: DATA_DIR_PATH
+      value: /clouddata
+    - name: HOSTNAME
+      valueFrom:
+        secretKeyRef:
+          name: mongo
+          key: hostname
+    - name: USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: mongo
+          key: username
+    - name: PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: mongo
+          key: password
   volumes:
   - name: config
   - name: data

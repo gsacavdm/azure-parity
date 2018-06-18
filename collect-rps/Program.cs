@@ -12,7 +12,7 @@ namespace azure_parity.collect_rps
     class Program
     {
         static bool Debug = true;
-        static int CycleTime = 1 * 60 * 60 * 1000; // 1 hour
+        static int CycleTime = 24 * 60 * 60 * 1000; // 24 hours
 
         static void Main(string[] args)
         {
