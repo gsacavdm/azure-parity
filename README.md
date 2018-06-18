@@ -4,19 +4,24 @@ This repository consists of several tools used to identify gaps between Azure pu
 ## Scope
 | Type | Source | Data Collection | Post-Processing |
 |------|--------|-----------------|-----------------|
-| ARM Resource Providers | Azure Resource Manager API | Program.cs | mongodb/resourceProvider.js |
-| ARM Resource Types | Azure Resource Manager API | Program.cs | mongodb/resourceProvider.js |
-| ARM API Versions | Azure Resource Manager API | Program.cs | TBD |
-| Role Definitions | Azure Resource Manager API | Program.cs | mongodb/role.js |
-| Policy Definitions | Azure Resource Manager API | Program.cs | mongodb/policy.js |
-| Azure Health Support | Azure Resource Manager API | Program.cs | mongodb/health.js |
-| Portal Extensions | Azure Portal | Program.cs | mongodb/portalExtensions.js |
-| Portal Extension Feature Flags | Azure Portal | Program.cs | mongodb/portalExtensions.js |
+| ARM Resource Providers | Azure Resource Manager API | collect-rps | TBD |
+| ARM Resource Types | Azure Resource Manager API | collect-rps | TBD |
+| ARM API Versions | Azure Resource Manager API | collect-rps | TBD |
+| Role Definitions | Azure Resource Manager API | TBD | TBD |
+| Policy Definitions | Azure Resource Manager API | TBD | TBD |
+| Azure Health Support | Azure Resource Manager API | TBD | TBD |
+| Portal Extensions | Azure Portal | TBD | TBD |
+| Portal Extension Feature Flags | Azure Portal | TBD | TBD |
 
-## Data Collector
-Data is collected by a dotnet core program. 
+## Running This Tool
+Everything is done through containers.
 
-It requires that you have a Key Vault which has Azure AD SP credentials to access all clouds (public and the sovereigns). It is assumed that you have an account in each cloud.
+* Data is collected by a containerized dotnet core program. 
+* Data is uploaded by a containerized bash script.
+* Data is post-processed by a containerized nodeJs program.
+* Secrets are obtained by Key Vault by containerized dotnet core program.
+
+This repo requires that you have a Key Vault which has Azure AD SP credentials to access all clouds (public and the sovereigns). It is assumed that you have a user account in each cloud to execute some of these setup steps.
 
 1. Clone the repo and cd into it:
 
@@ -38,6 +43,7 @@ It requires that you have a Key Vault which has Azure AD SP credentials to acces
 
     ```bash
     az cloud set -n <EnvironmentName>
+    az login
 
     #TODO: Add the right parameters to the command
     az ad sp create-for-rbac
@@ -63,84 +69,21 @@ It requires that you have a Key Vault which has Azure AD SP credentials to acces
     #TODO: az keyvault command to grant the Azure AD SP permissions to the key vault
     ```
 
-1. Setup your environment variables:
+1. Setup your secrets:
 
     ```bash
-    cp secrets.sh secrets.ignore.sh
+    cp k8/keyvault.yaml k8/keyvault.ignore.yaml
 
-    # Update the values in secrets.ignore.sh
-
-    source secrets.sh
+    # Update the values in keyvault.ignore.yaml
     ```
 
-1. Run the data collector:
+1. Deploy to Kubernetes:
 
     ```bash
-    dotnet restore
-    dotnet run
-    ```
+    # Deploy your Key Vault secrets
+    kubectl apply -f k8/keyvault.ignore.yaml
 
-## Post-Processing
-The data collector will produce a bunch of json files in `bin\output`.
-These need to be further massaged in MongoDB.
-
-1. Load these files into MongoDB using the mongoimport tool.
-
-    >NOTE: If you are using Azure Cosmos DB, obtain the database's
-    >hostname, username and password in the Azure portal by navigating
-    >to **Quick start** > **MongoDB Shell** > **Connect using MongoDB Shell**.
- 
-
-    ```bash
-    $HOSTNAME=replace_with_hostname
-    $USERNAME=replace_with_username
-    $PASSWORD=replace_with_password
-    $DATABASE=azure-parity
-
-    cd azure-parity/bin/output
+    # Deploy the pod that will collect resource provider data
+    kubectl apply -f k8/rps.yaml
     
-    #Confirm this command outputs all the json files
-    ls
-
-    find *.json -exec mongoimport --host $HOSTNAME -u $USERNAME -p $PASSWORD --ssl --sslAllowInvalidCertificates -d azure-parity --file {} \;
     ```
-
-1. In MongoDB, run everything in the mongodb directory.
-
-    1. First connect to mongo using the following command:
-
-        ```bash
-        mongo $HOSTNAME -u $USERNAME -p $PASSWORD --ssl --sslAllowInvalidCertificates
-        ```
-
-    1. From within that bash instance, copy and paste (manually) the contents of the mongodb/\*.js files in the following order:
-    
-        1. util.js
-        1. resourceProvider.js
-        1. policy.js
-        1. role.js
-        1. health.js
-        1. portalExtension.js
-        1. feature.js
-
- 1. If you want to do offline analysis in Excel, you can export the data using mongoexport:
-
-    ```bash
-    mongoexport --host $HOSTNAME -u $USERNAME -p $PASSWORD --ssl --sslAllowInvalidCertificates -d azure-parity -c portalExtensionFeatureMissingByNamespace --type=csv -f "name,missingInFairfax,missingInMooncake,missingInBlackforest" -o portalExtensionFeatureMissingByNamespace.csv
-    ```
-
-# Containerize!
-
-Containers:
-
-| name | description |
-|------|--------------|
-| azparity-cloudcfg:0.1 | Obtains the cloud config values from KeyVault |
-| azparity-rps:0.1 | Collects resource provider data |
-| azparity-roles:0.1 | Collects role data | 
-| ... | ... |
-
-```bash
-docker build . -t azparity-cloudcfg:0.1
-docker run -it --name cloudcfg azparity-cloudcfg:0.1 bash
-```
