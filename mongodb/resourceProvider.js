@@ -18,7 +18,7 @@ function getResourceTypes(rps) {
     [], rps.map(rp => 
       rp.resourceTypes.map(rpt => { return {
         namespace: rp.namespace.toLowerCase(),
-        resourceType: rp.namespace.toLowerCase() + '/' + rpt.resourceType 
+        resourceType: rp.namespace.toLowerCase() + '/' + rpt.resourceType.toLowerCase()
       }})
     )
   ).sort()
@@ -36,7 +36,7 @@ function getApis(rps) {
           rpt.apiVersions.map(apiVersion => { 
             return {
               namespace: rp.namespace.toLowerCase(), 
-              resourceType: rp.namespace.toLowerCase() + '/' + rpt.resourceType,
+              resourceType: rp.namespace.toLowerCase() + '/' + rpt.resourceType.toLowerCase(),
               apiVersion: apiVersion
             }
           })

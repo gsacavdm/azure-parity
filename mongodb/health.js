@@ -1,15 +1,25 @@
-var h_ww = db.health_Ww.findOne().metadata.supportedResourceTypes;
-var h_ff = db.health_Ff.findOne().metadata.supportedResourceTypes;
-var h_mc = db.health_Mc.findOne().metadata.supportedResourceTypes;
-var h_bf = db.health_Bf.findOne().metadata.supportedResourceTypes;
+var h_ww = db.health_Ww.findOne().metadata.supportedResourceTypes.map(h => h.toLowerCase());
+var h_ff = db.health_Ff.findOne().metadata.supportedResourceTypes.map(h => h.toLowerCase());
+var h_mc = db.health_Mc.findOne().metadata.supportedResourceTypes.map(h => h.toLowerCase());
+var h_bf = db.health_Bf.findOne().metadata.supportedResourceTypes.map(h => h.toLowerCase());
 
 // Get delta for health
+function getHealthInSovereignBit(rp, h_sov, h, sovereignBit) {
+  query = {}
+  query.resourceType = h
+  query[sovereignBit] = 1
+  if (rp.find(query).count() > 0) {
+    return h_sov.indexOf(h) > -1 ? 1 : 0
+  } else {
+    return "N/A"
+  }
+}
 h_delta = h_ww.map(h => { return { 
-  namespace: h.match(rpRegEx)[0].toLowerCase(),
-  resourceType: h.toLowerCase(),
-  inFairfax: h_ff.indexOf(h) > -1 ? 1 : 0,
-  inMooncake: h_mc.indexOf(h) > -1 ? 1 : 0,
-  inBlackforest: h_bf.indexOf(h) > -1 ? 1 : 0,
+  namespace: h.match(rpRegEx)[0],
+  resourceType: h,
+  inFairfax: getHealthInSovereignBit(db.resourceTypeDelta, h_ff, h, "inFairfax"),
+  inMooncake: getHealthInSovereignBit(db.resourceTypeDelta, h_mc, h, "inMooncake"),
+  inBlackforest: getHealthInSovereignBit(db.resourceTypeDelta, h_bf, h, "inBlackforest")
 }}).sort()
 dropAndInsert("healthDelta", h_delta)
 

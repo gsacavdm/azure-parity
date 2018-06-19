@@ -47,4 +47,4 @@ function safeGet(obj, properties, defaultVal) {
   return obj;
 }
 
-var rpRegEx = /Microsoft\.[a-zA-Z.]+/g
+var rpRegEx = /[Mm]icrosoft\.[a-zA-Z.]+/g
