@@ -32,8 +32,6 @@ namespace azure_parity.collect_rps
                     string accessToken = cloudConfigJson["AccessToken"].Value<string>();
                     string azureEndpoint = cloudConfigJson["AzureEndpoint"].Value<string>();
 
-                    var armHttpClient = GetHttpClient(accessToken);
-
                     Console.WriteLine("Getting resource providers...");
                     string resourceProviderApiVersion = "2017-08-01";
                     string resourceProviderEndpoint = 
@@ -60,12 +58,6 @@ namespace azure_parity.collect_rps
                 Console.WriteLine("Done!");
                 Task.Delay(CycleTime).Wait();
             }
-        }
-
-        public static HttpClient GetHttpClient(string accessToken = "") {
-            var httpClient = new HttpClient();
-            if (!string.IsNullOrEmpty(accessToken)) httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken);
-            return httpClient;
         }
     }
 }
