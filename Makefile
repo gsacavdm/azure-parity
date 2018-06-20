@@ -18,6 +18,11 @@ collect-policies:
 	docker build . -t ${REGISTRY}/azparity-collect-policies:${VERSION} -f collect-policies/Dockerfile
 	docker push ${REGISTRY}/azparity-collect-policies:${VERSION}
 
+.PHONY: collect-roles
+collect-roles:
+	docker build . -t ${REGISTRY}/azparity-collect-roles:${VERSION} -f collect-roles/Dockerfile
+	docker push ${REGISTRY}/azparity-collect-roles:${VERSION}
+
 .PHONY: collect-portalextensions
 collect-portalextensions:
 	docker build . -t ${REGISTRY}/azparity-collect-portalextensions:${VERSION} -f collect-portalextensions/Dockerfile
