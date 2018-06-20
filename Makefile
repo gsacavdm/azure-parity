@@ -23,6 +23,11 @@ collect-roles:
 	docker build . -t ${REGISTRY}/azparity-collect-roles:${VERSION} -f collect-roles/Dockerfile
 	docker push ${REGISTRY}/azparity-collect-roles:${VERSION}
 
+.PHONY: collect-health
+collect-health:
+	docker build . -t ${REGISTRY}/azparity-collect-health:${VERSION} -f collect-health/Dockerfile
+	docker push ${REGISTRY}/azparity-collect-health:${VERSION}
+
 .PHONY: collect-portalextensions
 collect-portalextensions:
 	docker build . -t ${REGISTRY}/azparity-collect-portalextensions:${VERSION} -f collect-portalextensions/Dockerfile
