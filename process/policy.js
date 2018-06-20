@@ -95,7 +95,7 @@ rpns_missing_p = {
 }
 dropAndInsert("resourceProviderMissingPolicy", rpns_missing_p);
 
-
+/*
 /////////////////////////
 // Presenting this information
 /////////////////////////
@@ -132,3 +132,4 @@ db.policyDelta.find({
 
 // ACTION: Get the policy guys to introduce VERSIONS
 // ACTION: Get the policy guys to standardize approach for preview
+*/
