@@ -13,6 +13,11 @@ collect-rps:
 	docker build . -t ${REGISTRY}/azparity-collect-rps:${VERSION} -f collect-rps/Dockerfile
 	docker push ${REGISTRY}/azparity-collect-rps:${VERSION}
 
+.PHONY: collect-policies
+collect-policies:
+	docker build . -t ${REGISTRY}/azparity-collect-policies:${VERSION} -f collect-policies/Dockerfile
+	docker push ${REGISTRY}/azparity-collect-policies:${VERSION}
+
 .PHONY: upload
 upload:
 	docker build . -t ${REGISTRY}/azparity-upload:${VERSION} -f upload/Dockerfile
