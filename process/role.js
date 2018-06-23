@@ -92,6 +92,7 @@ rpns_missing_r = {
 }
 dropAndInsert("resourceProviderMissingRole", rpns_missing_r);
 
+/*
 /////////////////////////
 // Presenting this information
 /////////////////////////
@@ -127,3 +128,4 @@ db.roleDelta.find({
 
 // ACTION: Get the RBAC guys to introduce VERSIONS
 // ACTION: Get the RBAC guys to standardize approach for preview
+*/

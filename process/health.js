@@ -57,7 +57,7 @@ rpns_missing_h = {
 }
 dropAndInsert("resourceProviderMissingHealth", rpns_missing_h);
 
-
+/*
 /////////////////////////
 // Presenting this information
 /////////////////////////
@@ -78,3 +78,4 @@ db.healthDelta.find({ namespace: "microsoft.apimanagement", inFairfax : 0 }, { _
 
 // ACTION: Get the RBAC guys to introduce VERSIONS
 // ACTION: Get the RBAC guys to standardize approach for preview
+*/

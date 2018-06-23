@@ -132,7 +132,7 @@ rpns_missing_rt = {
 }
 dropAndInsert("resourceProviderMissingResourceType", rpns_missing_rt);
 
-
+/*
 /////////////////////////
 // Presenting this information
 /////////////////////////
@@ -161,3 +161,4 @@ db.resourceTypeMissingByNamespace.find({ missingInFairfax : { $gt : 0 } }, { _id
 // Get all the missing resource types in Fairfax
 // ACTION: Get status/reason for each one.
 db.resourceTypeDelta.find({ namespace: "microsoft.compute", inFairfax : 0 }, { _id : 0, resourceType : 1 , nonPreviewApis : 1 })
+*/

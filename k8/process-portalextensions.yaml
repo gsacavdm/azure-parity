@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: azparity-process-portalextensions
+  labels:
+    app: azparity-process-portalextensions
+spec:
+  containers:
+  - name: process
+    image: gsacavdm/azparity-process:0.0.2
+    imagePullPolicy: Always
+    env:
+    - name: FILE
+      value: portalExtension.js
+    - name: HOSTNAME
+      valueFrom:
+        secretKeyRef:
+          name: mongo
+          key: hostname
+    - name: USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: mongo
+          key: username
+    - name: PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: mongo
+          key: password
+
