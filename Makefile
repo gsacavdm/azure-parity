@@ -1,12 +1,15 @@
 REGISTRY = gsacavdm
 VERSION = 0.0.2
 	
-default: cloudcfg collect-rps upload process
+default: cloudcfg collect upload process
 
 .PHONY: cloudcfg
 cloudcfg:
 	docker build . -t ${REGISTRY}/azparity-cloudcfg:${VERSION} -f cloudcfg/Dockerfile
 	docker push ${REGISTRY}/azparity-cloudcfg:${VERSION}
+
+.PHONY: collect
+collect: collect-rps collect-policies collect-roles collect-health collect-portalextensions
 
 .PHONY: collect-rps
 collect-rps:
