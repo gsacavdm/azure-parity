@@ -18,7 +18,7 @@ namespace azure_parity
             return value;
         }
 
-        static int SleepDurationMiliseconds = 10 * 1000; // 10 seconds
+        static int SleepDurationMiliseconds = 10 * 60 * 1000; // 10 minutes
         static int DataFreshnessHours = 24;
 
         public delegate string Collector(string subscriptionId, string endpoint, HttpClient httpClient);
@@ -29,6 +29,12 @@ namespace azure_parity
                 string configDirPath = GetEnvironmentVariableOrFail("CONFIG_DIR_PATH");
                 string dataDirPath = GetEnvironmentVariableOrFail("DATA_DIR_PATH");
                 var files = Directory.GetFiles(configDirPath);
+
+                var lastCollectedFilePath = String.Format("lastCollected_{0}.json", sourceName);
+                var lastCollected = new JObject();
+                if (File.Exists(lastCollectedFilePath)) {
+                    lastCollected = JObject.Parse(File.ReadAllText(lastCollectedFilePath));
+                }
 
                 foreach (var file in files) {
                     Console.WriteLine("Processing " + file + "...");
@@ -43,10 +49,11 @@ namespace azure_parity
                     string azureEndpoint = cloudConfigJson["AzureEndpoint"].Value<string>();
                     string portalEndpoint = cloudConfigJson["PortalEndpoint"].Value<string>();
 
-                    var dataPath = String.Format("{0}/{1}_{2}.json", dataDirPath, sourceName, cloudName);                    
-                    if (File.Exists(dataPath)) {
-                        var fileInfo = new FileInfo(dataPath);
-                        var createdHoursAgo = (DateTime.UtcNow - fileInfo.CreationTimeUtc).TotalHours;
+                    var dataFile = String.Format("{0}_{1}.json", sourceName, cloudName);                    
+                    var dataPath = String.Format("{0}/{1}", dataDirPath, dataFile);                    
+                    if (File.Exists(dataPath) && lastCollected[dataFile] != null) {
+                        var createdTime = lastCollected[dataFile].Value<DateTime>();
+                        var createdHoursAgo = (DateTime.UtcNow - createdTime).TotalHours;
                         if (createdHoursAgo < DataFreshnessHours) {
                             Console.WriteLine("Skipping {0}. Collected {1} hours ago...", sourceName, createdHoursAgo);
                             continue;
@@ -73,8 +80,12 @@ namespace azure_parity
                     
                     Console.WriteLine(String.Format("Saving {0}", dataPath));
                     File.WriteAllText(dataPath, data);
+
+                    lastCollected[dataFile] = DateTime.UtcNow.ToString();
                 }
             
+                File.WriteAllText(lastCollectedFilePath, lastCollected.ToString());
+
                 Console.WriteLine("Done!");
                 Task.Delay(SleepDurationMiliseconds).Wait();
             }
