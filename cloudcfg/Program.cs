@@ -14,7 +14,9 @@ namespace azure_parity.cloudcfg
 {
     class Program
     {
-        static int CycleTime = 24 * 60 * 60 * 1000; // 24 hours
+        //static int SleepDurationMiliseconds = 10 * 1000; // 10 seconds
+        static int SleepDurationMiliseconds = 10 * 60 * 1000; // 10 minutes
+        static int ConfigFreshnessHours = 24;
 
         static void Main(string[] args)
         {
@@ -35,10 +37,27 @@ namespace azure_parity.cloudcfg
                 var azureEndpoints = new string[] { "https://management.azure.com/", "https://management.usgovcloudapi.net/", "https://management.chinacloudapi.cn/", "https://management.microsoftazure.de/" };
                 var portalEndpoints = new string[] { "portal.azure.com", "portal.azure.us", "portal.azure.cn", "portal.microsoftazure.de" };
 
+                var lastDownloadedFilePath = "lastDownloaded.json";
+                var lastDownloaded = new JObject();
+                if (File.Exists(lastDownloadedFilePath)) {
+                    lastDownloaded = JObject.Parse(File.ReadAllText(lastDownloadedFilePath));
+                }
+
                 for (int i = 0; i < cloudNames.Length; i++) {
                     var cloudName = cloudNames[i];
                     var armResource = azureEndpoints[i];
                     Console.WriteLine("Processing " + cloudName + "...");
+
+                    var configFile = String.Format("{0}.json", cloudName);                    
+                    var configPath = String.Format("{0}/{1}.json", configDirPath, configFile);
+                    if (File.Exists(configPath) && lastDownloaded[configFile] != null) {
+                        var createdTime = lastDownloaded[configFile].Value<DateTime>();
+                        var createdHoursAgo = (DateTime.UtcNow - createdTime).TotalHours;
+                        if (createdHoursAgo < ConfigFreshnessHours) {
+                            Console.WriteLine("Skipping {0}. Downloaded {1} hours ago...", cloudName, createdHoursAgo);
+                            continue;
+                        }
+                    }
 
                     Console.WriteLine("Getting cloud config...");
                     var secretName = string.Format("parityApp{0}", cloudName);
@@ -69,13 +88,16 @@ namespace azure_parity.cloudcfg
                     // ======== REMOVE ME ==============
                     */
 
-                    var configPath = String.Format("{0}/{1}.json", configDirPath, cloudName);
                     Console.WriteLine(String.Format("Saving {0}", configPath));
                     File.WriteAllText(configPath, cloudConfigJson.ToString());
+
+                    lastDownloaded[configFile] = DateTime.UtcNow.ToString();
                 }
                 
+                File.WriteAllText(lastDownloadedFilePath, lastDownloaded.ToString());
+
                 Console.WriteLine("Done!");
-                Task.Delay(CycleTime).Wait();
+                Task.Delay(SleepDurationMiliseconds).Wait();
             }
         }
 
