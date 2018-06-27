@@ -9,7 +9,7 @@ cloudcfg:
 	docker push ${REGISTRY}/azparity-cloudcfg:${VERSION}
 
 .PHONY: collect
-collect: collect-rps collect-policies collect-roles collect-health collect-portalextensions
+collect: collect-rps collect-policies collect-roles collect-health collect-portalextensions collect-vmextensions
 
 .PHONY: collect-rps
 collect-rps:
@@ -35,6 +35,11 @@ collect-health:
 collect-portalextensions:
 	docker build . -t ${REGISTRY}/azparity-collect-portalextensions:${VERSION} -f collect-portalextensions/Dockerfile
 	docker push ${REGISTRY}/azparity-collect-portalextensions:${VERSION}
+
+.PHONY: collect-vmextensions
+collect-vmextensions:
+	docker build . -t ${REGISTRY}/azparity-collect-vmextensions:${VERSION} -f collect-vmextensions/Dockerfile
+	docker push ${REGISTRY}/azparity-collect-vmextensions:${VERSION}
 
 .PHONY: upload
 upload:
