@@ -11,7 +11,7 @@ spec:
     imagePullPolicy: Always
     env:
     - name: FILE
-      value: feature.js
+      value: feature.js featureDelta.js
     - name: HOSTNAME
       valueFrom:
         secretKeyRef:

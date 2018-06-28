@@ -1,3 +1,10 @@
+if (allExists([
+  "featureDelta"
+])) {
+  quit();
+}
+db.featureDelta.drop()
+
 list_rt = db.resourceTypeDelta.find({ 
   inFairfax:0, 
   nonPreviewApis: { $gt: 0 }
