@@ -46,7 +46,7 @@ namespace azure_parity.cloudcfg
                 for (int i = 0; i < cloudNames.Length; i++) {
                     var cloudName = cloudNames[i];
                     var armResource = azureEndpoints[i];
-                    Console.WriteLine("Processing " + cloudName + "...");
+                    utils.Log("Processing " + cloudName + "...");
 
                     var configFile = String.Format("{0}.json", cloudName);                    
                     var configPath = String.Format("{0}/{1}.json", configDirPath, configFile);
@@ -54,12 +54,12 @@ namespace azure_parity.cloudcfg
                         var createdTime = lastDownloaded[configFile].Value<DateTime>();
                         var createdHoursAgo = (DateTime.UtcNow - createdTime).TotalHours;
                         if (createdHoursAgo < ConfigFreshnessHours) {
-                            Console.WriteLine("Skipping {0}. Downloaded {1} hours ago...", cloudName, createdHoursAgo);
+                            utils.Log("Skipping {0}. Downloaded {1} hours ago...", cloudName, createdHoursAgo);
                             continue;
                         }
                     }
 
-                    Console.WriteLine("Getting cloud config...");
+                    utils.Log("Getting cloud config...");
                     var secretName = string.Format("parityApp{0}", cloudName);
 
                     var cloudConfig = keyVaultClient.GetSecretAsync(vaultBaseUrl, secretName).Result.Value;
@@ -69,7 +69,7 @@ namespace azure_parity.cloudcfg
                     cloudConfigJson["AzureEndpoint"] = armResource;
                     cloudConfigJson["PortalEndpoint"] = portalEndpoints[i];
 
-                    Console.WriteLine("Getting ARM access token...");
+                    utils.Log("Getting ARM access token...");
                     var tenantId = cloudConfigJson["TenantId"].Value<string>();
                     var clientId = cloudConfigJson["ClientId"].Value<string>();
                     var clientSecret = cloudConfigJson["ClientSecret"].Value<string>();
@@ -88,7 +88,7 @@ namespace azure_parity.cloudcfg
                     // ======== REMOVE ME ==============
                     */
 
-                    Console.WriteLine(String.Format("Saving {0}", configPath));
+                    utils.Log(String.Format("Saving {0}", configPath));
                     File.WriteAllText(configPath, cloudConfigJson.ToString());
 
                     lastDownloaded[configFile] = DateTime.UtcNow.ToString();
@@ -96,7 +96,7 @@ namespace azure_parity.cloudcfg
                 
                 File.WriteAllText(lastDownloadedFilePath, lastDownloaded.ToString());
 
-                Console.WriteLine("Done!");
+                utils.Log("Done!");
                 Task.Delay(SleepDurationMiliseconds).Wait();
             }
         }

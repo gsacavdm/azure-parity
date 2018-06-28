@@ -20,7 +20,7 @@ namespace azure_parity.collect_roles
                 var roleEndpoint = 
                     String.Format("{0}subscriptions/{1}/providers/Microsoft.Authorization/roleDefinitions?api-version={2}", 
                         azureEndpoint, subscriptionId, roleApiVersion);
-                if (Debug) Console.WriteLine("RoleEndpoint: " + roleEndpoint);
+                if (Debug) utils.Log("RoleEndpoint: " + roleEndpoint);
                 return httpClient.GetStringAsync(roleEndpoint).Result;
             });
         }

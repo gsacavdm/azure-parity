@@ -20,7 +20,7 @@ namespace azure_parity.collect_health
                 string healthEndpoint = 
                     String.Format("{0}subscriptions/{1}/providers/Microsoft.ResourceHealth?$expand=metadata&api-version={2}", 
                         azureEndpoint, subscriptionId, healthApiVersion);
-                if (Debug) Console.WriteLine("HealthEndpoint: " + healthEndpoint);
+                if (Debug) utils.Log("HealthEndpoint: " + healthEndpoint);
                 return httpClient.GetStringAsync(healthEndpoint).Result;
             });
         }

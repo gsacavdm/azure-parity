@@ -18,6 +18,11 @@ namespace azure_parity
             return value;
         }
 
+        public static void Log(string format, params object[] args){
+            string date = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            Console.WriteLine(date + ": " + format, args);
+        }
+
         static int SleepDurationMiliseconds = 10 * 60 * 1000; // 10 minutes
         static int DataFreshnessHours = 24;
 
@@ -37,11 +42,11 @@ namespace azure_parity
                 }
 
                 foreach (var file in files) {
-                    Console.WriteLine("Processing " + file + "...");
+                    utils.Log("Processing " + file + "...");
 
                     string cloudConfig = File.ReadAllText(file);
 
-                    Console.WriteLine("Getting cloud config...");
+                    utils.Log("Getting cloud config...");
                     JObject cloudConfigJson = JObject.Parse(cloudConfig);
                     string cloudName = cloudConfigJson["CloudName"].Value<string>();
                     string subscriptionId = cloudConfigJson["SubscriptionId"].Value<string>();
@@ -55,12 +60,12 @@ namespace azure_parity
                         var createdTime = lastCollected[dataFile].Value<DateTime>();
                         var createdHoursAgo = (DateTime.UtcNow - createdTime).TotalHours;
                         if (createdHoursAgo < DataFreshnessHours) {
-                            Console.WriteLine("Skipping {0}. Collected {1} hours ago...", sourceName, createdHoursAgo);
+                            utils.Log("Skipping {0}. Collected {1} hours ago...", sourceName, createdHoursAgo);
                             continue;
                         }
                     }
 
-                    Console.WriteLine("Getting {0}...", sourceName);
+                    utils.Log("Getting {0}...", sourceName);
 
                     string data = "{}";
                     try {
@@ -73,12 +78,12 @@ namespace azure_parity
                             data = CollectDetails(subscriptionId, endpoint, httpClient);
                         }
                     } catch (Exception ex) {
-                        Console.WriteLine("WARN: Exception occurred. CloudName={0} SourceName={1} ExceptionMessage={2}", 
+                        utils.Log("WARN: Exception occurred. CloudName={0} SourceName={1} ExceptionMessage={2}", 
                             cloudName, sourceName, ex.Message);
                     }
-                    //Console.WriteLine(data);
+                    //utils.Log(data);
                     
-                    Console.WriteLine(String.Format("Saving {0}", dataPath));
+                    utils.Log(String.Format("Saving {0}", dataPath));
                     File.WriteAllText(dataPath, data);
 
                     lastCollected[dataFile] = DateTime.UtcNow.ToString();
@@ -86,7 +91,7 @@ namespace azure_parity
             
                 File.WriteAllText(lastCollectedFilePath, lastCollected.ToString());
 
-                Console.WriteLine("Done!");
+                utils.Log("Done!");
                 Task.Delay(SleepDurationMiliseconds).Wait();
             }
         }

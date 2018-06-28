@@ -17,7 +17,7 @@ namespace azure_parity.collect_portalextensions
         {
             utils.Collect("portalExtension", false, (subscriptionId, portalEndpoint, httpClient) => {
                 var diagnosticsEndpoint = String.Format("https://{0}/api/diagnostics", portalEndpoint);
-                if (Debug) Console.WriteLine("DiagnosticsEndpoint: " + diagnosticsEndpoint);
+                if (Debug) utils.Log("DiagnosticsEndpoint: " + diagnosticsEndpoint);
              
                 var portalExtensions = new JArray();       
                 
@@ -40,12 +40,12 @@ namespace azure_parity.collect_portalextensions
                     var validEndpoint = false;
 
                     var extensionInfo = String.Empty;
-                    if (Debug) Console.WriteLine("ExtensionEndpoint: " + extensionEndpoint);
+                    if (Debug) utils.Log("ExtensionEndpoint: " + extensionEndpoint);
                     try {
                         extensionInfo = httpClient.GetStringAsync(extensionEndpoint).Result;
                         validEndpoint = true;
                     } catch (Exception ex) {
-                        Console.WriteLine("WARN: Skipping {0} due to exception: {1}", extensionName, ex.Message);
+                        utils.Log("WARN: Skipping {0} due to exception: {1}", extensionName, ex.Message);
                     }
 
                     var matches = Regex.Matches(extensionInfo, "\"features\"[ ]*:[ ]*{.*?}", RegexOptions.IgnoreCase);
@@ -56,7 +56,7 @@ namespace azure_parity.collect_portalextensions
                         extensionObject["features"] = featuresJson;
                         regexMatch = true;
                     } else {
-                        Console.WriteLine("WARN: No features found for extension {0}", extensionName);
+                        utils.Log("WARN: No features found for extension {0}", extensionName);
                     }
 
                     extensionObject["validEndpoint"] = validEndpoint;
@@ -66,7 +66,7 @@ namespace azure_parity.collect_portalextensions
                 }
                     
                 //File.WriteAllText(String.Format("bin/output/{0}", portalEndpoint), diagnosticsClean);
-                //Console.WriteLine(portalExtensions);
+                //utils.Log(portalExtensions);
 
                 var wrapper = new JObject();
                 wrapper["value"] = portalExtensions;
