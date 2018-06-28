@@ -1,10 +1,15 @@
 FROM microsoft/dotnet:sdk
-COPY . /app
+COPY /collect-health/collect-health.csproj /app/collect-health/
+COPY /shared/shared.csproj /app/shared/
 
 WORKDIR /app/collect-health
 
-RUN dotnet restore \
-  && dotnet publish -c Release -r alpine-x64 -o bin/out
+RUN dotnet restore
+
+COPY /collect-health/ /app/collect-health
+COPY /shared/ /app/shared/
+
+RUN dotnet publish -c Release -r alpine-x64 -o bin/out
 
 FROM microsoft/dotnet:2.1-runtime-deps-alpine
 LABEL AUTHOR=gsacavdm
