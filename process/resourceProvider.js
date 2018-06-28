@@ -1,3 +1,14 @@
+if (allExists([
+  "resourceProviderDelta",
+  "resourceProviderMissing",
+  "resourceTypeDelta",
+  "resourceTypeMissingByNamespace",
+  "resourceTypeMissing",
+  "resourceProviderMissingResourceType"
+])) {
+  quit();
+}
+
 var rp_ww = db.resourceProvider_Ww.findOne().value;
 var rp_ff = db.resourceProvider_Ff.findOne().value;
 var rp_mc = db.resourceProvider_Mc.findOne().value;

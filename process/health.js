@@ -1,3 +1,12 @@
+if (allExists([
+  "healthDelta",
+  "healthMissing",
+  "healthMissingByNamespace",
+  "resourceProviderMissingHealth"
+])) {
+  quit();
+}
+
 var h_ww = db.health_Ww.findOne().metadata.supportedResourceTypes.map(h => h.toLowerCase());
 var h_ff = db.health_Ff.findOne().metadata.supportedResourceTypes.map(h => h.toLowerCase());
 var h_mc = db.health_Mc.findOne().metadata.supportedResourceTypes.map(h => h.toLowerCase());

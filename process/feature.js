@@ -1,3 +1,11 @@
+if (allExists([
+  "featureMissingByNamespace",
+  "featureMissing",
+  "resourceProviderMissingFeature"
+])) {
+  quit();
+}
+
 f_missing_ns = db.resourceProviderDelta.find({inFairfax:1}).map(rp => { return {
   namespace: rp.namespace,
   isFirstParty: rp.isFirstParty,

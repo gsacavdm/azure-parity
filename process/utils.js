@@ -12,6 +12,11 @@ function dropAndInsert(collectionName, collection) {
 
   db[collectionName].insert(collection);
 }
+
+function allExists(collectionNames){
+  var found = db.getCollectionNames().filter(c => collectionNames.indexOf(c) > -1);
+  return found.length === collectionNames.length;
+}
  
 function allRpsAvailable(rps, sovereignBit){
   //TODO: Do this outside of the function

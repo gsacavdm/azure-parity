@@ -1,3 +1,12 @@
+if (allExists([
+  "roleDelta",
+  "roleMissing",
+  "roleMissingByNamespace",
+  "resourceProviderMissingRole"
+])) {
+  quit();
+}
+
 function getRoleDefinition(arr) { 
   return arr.findOne()
     .value

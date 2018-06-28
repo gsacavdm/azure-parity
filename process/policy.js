@@ -1,3 +1,12 @@
+if (allExists([
+  "policyDelta",
+  "policyMissing",
+  "policyMissingByNamespace",
+  "resourceProviderMissingPolicy"
+])) {
+  quit();
+}
+
 function getPolicyDefinition(arr, i) { 
   return arr.findOne()
     .value

@@ -1,3 +1,13 @@
+if (allExists([
+  "portalExtensionDelta",
+  "portalExtensionMissing",
+  "portalExtensionFeatureDelta",
+  "portalExtensionFeatureMissingByNamespace",
+  "portalExtensionFeatureMissing"
+])) {
+  quit();
+}
+
 var pe_ww = db.portalExtension_Ww.findOne().value;
 var pe_ff = db.portalExtension_Ff.findOne().value;
 var pe_mc = db.portalExtension_Mc.findOne().value;
