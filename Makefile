@@ -50,3 +50,9 @@ upload:
 process:
 	docker build . -t ${REGISTRY}/azparity-process:${VERSION} -f process/Dockerfile
 	docker push ${REGISTRY}/azparity-process:${VERSION}
+
+.PHONY: deploy
+deploy:
+	kubectl get pods | grep azparity- | awk '{ system("kubectl delete pod " $1) }'
+	find k8/ -name collect-*.yaml -exec kubectl apply -f {} \;
+	find k8/ -name process-*.yaml -exec kubectl apply -f {} \;
