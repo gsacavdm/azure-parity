@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: azparity-vmextensions
+  name: azparity-collect-vmextensions
   labels:
-    app: azparity-vmextensions
+    app: azparity-collect-vmextensions
 spec:
   containers:
   - name: cloudcfg

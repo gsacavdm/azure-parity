@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: azparity-rps
+  name: azparity-collect-rps
   labels:
-    app: azparity-rps
+    app: azparity-collect-rps
 spec:
   containers:
   - name: cloudcfg
