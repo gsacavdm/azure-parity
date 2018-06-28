@@ -4,14 +4,14 @@ This repository consists of several tools used to identify gaps between Azure pu
 ## Scope
 | Type | Source | Data Collection | Post-Processing |
 |------|--------|-----------------|-----------------|
-| ARM Resource Providers | Azure Resource Manager API | collect-rps | TBD |
-| ARM Resource Types | Azure Resource Manager API | collect-rps | TBD |
-| ARM API Versions | Azure Resource Manager API | collect-rps | TBD |
-| Role Definitions | Azure Resource Manager API | TBD | TBD |
-| Policy Definitions | Azure Resource Manager API | TBD | TBD |
-| Azure Health Support | Azure Resource Manager API | TBD | TBD |
-| Portal Extensions | Azure Portal | TBD | TBD |
-| Portal Extension Feature Flags | Azure Portal | TBD | TBD |
+| ARM Resource Providers | Azure Resource Manager API | collect-rps | process-rps |
+| ARM Resource Types | Azure Resource Manager API | collect-rps | process-rps |
+| ARM API Versions | Azure Resource Manager API | collect-rps | process-rps |
+| Role Definitions | Azure Resource Manager API | collect-roles | process-roles |
+| Policy Definitions | Azure Resource Manager API | collect-policies | process-policies |
+| Azure Health Support | Azure Resource Manager API | collect-health | process-health |
+| Portal Extensions | Azure Portal | collect-portalextensions | process-portalextensions |
+| Portal Extension Feature Flags | Azure Portal | collect-portalextensions | process-portalextensions |
 
 ## Running This Tool
 Everything is done through containers.
@@ -69,21 +69,59 @@ This repo requires that you have a Key Vault which has Azure AD SP credentials t
     #TODO: az keyvault command to grant the Azure AD SP permissions to the key vault
     ```
 
+1. Setup your Mongo DB. You can use [Cosmos DB with MongoDB API](https://docs.microsoft.com/azure/cosmos-db/mongodb-introduction).
+
 1. Setup your secrets:
 
     ```bash
     cp k8/keyvault.yaml k8/keyvault.ignore.yaml
+    cp k8/mongo.yaml k8/mongo.ignore.yaml
 
-    # Update the values in keyvault.ignore.yaml
+    # Update the values in these *.ignore.yaml
+    # Remember that you need to base64 encode the secrets
+    # use "echo your-secret-value | base64" to obtain the encoded value
     ```
 
-1. Deploy to Kubernetes:
+1. Deploy your secrets to Kubernetes:
 
     ```bash
-    # Deploy your Key Vault secrets
+    # Deploy your secrets
     kubectl apply -f k8/keyvault.ignore.yaml
-
-    # Deploy the pod that will collect resource provider data
-    kubectl apply -f k8/rps.yaml
-    
+    kubectl apply -f k8/mongo.ignore.yaml
     ```
+
+1. Build all the containers
+
+    ```bash
+    # Check out the Makefile to see what 'make' does.
+    # It's doing a docker build an docker push of each of the containers
+    make
+    ```
+
+1. Deploy all pods to Kubernetes
+    ```bash
+    # Check out the Makefile to see what 'make deploy' does.
+    # It delets all existing pods and redeploys them.
+    make deploy
+    ```
+
+## TO-DO
+* Spit out all tables for report:
+    * Summary table:
+        * db.resourceProviderMissingFeature.findOne()
+    * ARM breakout table:
+        * db.resourceProviderMissingResourceType.findOne()
+        * db.resourceProviderMissingRole.findOne()
+        * db.resourceProviderMissingHealth.findOne()
+        * db.resourceProviderMissingPolicy.findOne()
+    * Portal Extension breakout table:
+        * db.portalExtensionMissingExtensionFeature.findOne()
+    * Total missing features table:
+        * db.featureMissing.findOne()
+        * db.portalExtensionFeatureMissing.findOne()
+* Pull *older than* from environment variable
+* Do a proper redeploy - update container versions + Kubernetes rollout
+* Move *DockerFile*s to a separate directory
+* Add option to not docker push in Makefile
+* Figure out better storage strategy (Mongo DB per day sucks!)
+* Use Azure storage persistent volumes for collection
