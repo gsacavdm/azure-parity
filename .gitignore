@@ -4,3 +4,5 @@ obj/
 *.ignore.*
 
 *.swp
+
+.vscode
