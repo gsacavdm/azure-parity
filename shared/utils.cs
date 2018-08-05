@@ -26,6 +26,15 @@ namespace azure_parity
         static int SleepDurationMiliseconds = 10 * 60 * 1000; // 10 minutes
         static int DataFreshnessHours = 24;
 
+        public static string WrapData(string cloud, string sourceName, string data){
+            var wrappedData = new JObject();
+            wrappedData["Date"] = DateTime.UtcNow;
+            wrappedData["Cloud"] = cloud;
+            wrappedData["SourceName"] = sourceName;
+            wrappedData["Data"] = JObject.Parse(data);
+            return wrappedData.ToString();
+        }
+
         public delegate string Collector(string subscriptionId, string endpoint, HttpClient httpClient);
 
         public static void Collect(string sourceName, bool useArm, Collector CollectDetails)
@@ -82,6 +91,8 @@ namespace azure_parity
                             cloudName, sourceName, ex.Message);
                     }
                     //utils.Log(data);
+
+                    string wrappedData = WrapData(cloudName, sourceName, data);
                     
                     utils.Log(String.Format("Save Collected Data. DataPath={0}", dataPath));
                     File.WriteAllText(dataPath, data);
