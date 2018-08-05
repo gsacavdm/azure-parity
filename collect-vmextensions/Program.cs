@@ -28,25 +28,25 @@ namespace azure_parity.collect_vmextensions
     
                 var vmExtensions = new JArray();
                 var locationsEndpoint = String.Format(locationsEndpointFmt, azureEndpoint, subscriptionId);
-                if (Debug) utils.Log("LocationsEndpoint: " + locationsEndpoint);
+                if (Debug) utils.Log("Collect VmExtensions. LocationsEndpoint={0}", locationsEndpoint);
                 var locationsResult = httpClient.GetStringAsync(locationsEndpoint + "?api-version=" + apiVersion).Result;
                 var locations =  JObject.Parse(locationsResult)["value"];
 
                 var publishersEndpoint = String.Format(publishersEndpointFmt, azureEndpoint, subscriptionId, locations[0]["name"]);
-                if (Debug) utils.Log("PublishersEndpoint: " + publishersEndpoint);
+                if (Debug) utils.Log("Collect VmExtension Publishers. PublishersEndpoint={0}", publishersEndpoint);
                 var publishersResult = httpClient.GetStringAsync(publishersEndpoint + "?api-version=" + apiVersion).Result;
                 var publishers = JArray.Parse(publishersResult);
 
                 foreach(var publisher in publishers) {
                     try {
                         var typesEndpoint = String.Format(typesEndpointFmt, publishersEndpoint, publisher["name"]);
-                        if (Debug) utils.Log("TypesEndpoint: " + typesEndpoint);
+                        if (Debug) utils.Log("Collect VmExtension ArtifactTypes. TypesEndpoint={0}", typesEndpoint);
                         var typesResult = httpClient.GetStringAsync(typesEndpoint + "?api-version=" + apiVersion).Result;
                         var types = JArray.Parse(typesResult);
 
                         foreach(var type in types) {
                             var versionsEndpoint = String.Format(versionsEndpointFmt, typesEndpoint, type["name"]);
-                            if (Debug) utils.Log("VersionsEndpoint: " + versionsEndpoint);
+                            if (Debug) utils.Log("Collect VmExtension Versions. VersionsEndpoint={0}", versionsEndpoint);
                             var versionsResult = httpClient.GetStringAsync(versionsEndpoint + "?api-version=" + apiVersion).Result;
                             var versions = JArray.Parse(versionsResult);
 
@@ -62,7 +62,7 @@ namespace azure_parity.collect_vmextensions
                         // TODO: Narrow the scope of the try/catch and exception. Investigate why this errors out.
                         // Some publishers error out when getting their extension types
                         // for example Microsoft.Azure.NetworkWatcher.Edp
-                        utils.Log("WARN: Exception occurred. Endpoint={0} ExceptionMessage={1}", 
+                        utils.Log("WARNING Exception. Endpoint={0} ExceptionMessage={1}", 
                             azureEndpoint, ex.Message);
                     }
                 }                   

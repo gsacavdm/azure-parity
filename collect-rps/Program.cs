@@ -19,7 +19,7 @@ namespace azure_parity.collect_rps
                 string resourceProviderApiVersion = "2017-08-01";
                 string resourceProviderEndpoint = 
                     String.Format("{0}providers?api-version={1}", azureEndpoint, resourceProviderApiVersion);
-                if (Debug) utils.Log("ResourceProviderEndpoint: " + resourceProviderEndpoint);
+                if (Debug) utils.Log("Collect ResourceProvider. ResourceProviderEndpoint={0}", resourceProviderEndpoint);
                 return httpClient.GetStringAsync(resourceProviderEndpoint).Result;
             });
         }

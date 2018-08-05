@@ -13,7 +13,7 @@ namespace azure_parity
         public static string GetEnvironmentVariableOrFail(string name){
             var value = Environment.GetEnvironmentVariable(name);
             if (String.IsNullOrEmpty(value)){
-                throw new ArgumentException(String.Format("Environment Variable variable {0} has not been set.", name));
+                throw new ArgumentException(String.Format("Environment Variable variable not set. EnvironmentVariable={0}", name));
             }
             return value;
         }
@@ -42,11 +42,11 @@ namespace azure_parity
                 }
 
                 foreach (var file in files) {
-                    utils.Log("Processing " + file + "...");
+                    utils.Log("Read CloudConfig. File={0}", file);
 
                     string cloudConfig = File.ReadAllText(file);
 
-                    utils.Log("Getting cloud config...");
+                    utils.Log("Parse CloudConfig. File={0}", file);
                     JObject cloudConfigJson = JObject.Parse(cloudConfig);
                     string cloudName = cloudConfigJson["CloudName"].Value<string>();
                     string subscriptionId = cloudConfigJson["SubscriptionId"].Value<string>();
@@ -60,12 +60,12 @@ namespace azure_parity
                         var createdTime = lastCollected[dataFile].Value<DateTime>();
                         var createdHoursAgo = (DateTime.UtcNow - createdTime).TotalHours;
                         if (createdHoursAgo < DataFreshnessHours) {
-                            utils.Log("Skipping {0}. Collected {1} hours ago...", sourceName, createdHoursAgo);
+                            utils.Log("Skip Collection. SourceName={0} CreatedHoursAgo={1}", sourceName, createdHoursAgo);
                             continue;
                         }
                     }
 
-                    utils.Log("Getting {0}...", sourceName);
+                    utils.Log("Collect. SourceName={0}", sourceName);
 
                     string data = "{}";
                     try {
@@ -78,12 +78,12 @@ namespace azure_parity
                             data = CollectDetails(subscriptionId, endpoint, httpClient);
                         }
                     } catch (Exception ex) {
-                        utils.Log("WARN: Exception occurred. CloudName={0} SourceName={1} ExceptionMessage={2}", 
+                        utils.Log("WARNING Exception. CloudName={0} SourceName={1} ExceptionMessage={2}", 
                             cloudName, sourceName, ex.Message);
                     }
                     //utils.Log(data);
                     
-                    utils.Log(String.Format("Saving {0}", dataPath));
+                    utils.Log(String.Format("Save Collected Data. DataPath={0}", dataPath));
                     File.WriteAllText(dataPath, data);
 
                     lastCollected[dataFile] = DateTime.UtcNow.ToString();
@@ -91,7 +91,8 @@ namespace azure_parity
             
                 File.WriteAllText(lastCollectedFilePath, lastCollected.ToString());
 
-                utils.Log("Done!");
+                utils.Log("Collection Complete.");
+                utils.Log("Sleep. SleepDurationInMiliseconds={0}", SleepDurationMiliseconds);
                 Task.Delay(SleepDurationMiliseconds).Wait();
             }
         }

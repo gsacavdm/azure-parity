@@ -20,7 +20,7 @@ namespace azure_parity.collect_policies
                 var policyEndpoint = 
                     String.Format("{0}subscriptions/{1}/providers/Microsoft.Authorization/policyDefinitions?api-version={2}", 
                         azureEndpoint, subscriptionId, policyApiVersion);
-                if (Debug) utils.Log("PolicyEndpoint: " + policyEndpoint);
+                if (Debug) utils.Log("Collect Policy. PolicyEndpoint={0}", policyEndpoint);
                 return httpClient.GetStringAsync(policyEndpoint).Result;
             });
         }
