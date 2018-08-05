@@ -31,7 +31,7 @@ spec:
           name: keyvault
           key: vault-base-url
   - name: collect
-    image: gsacavdm/azparity-collect-portalextensions:0.0.2
+    image: gsacavdm/azparity-collect-portalextensions:0.0.3
     imagePullPolicy: Always
     volumeMounts:
     - name: config
@@ -44,7 +44,7 @@ spec:
     - name: DATA_DIR_PATH
       value: /clouddata
   - name: upload
-    image: gsacavdm/azparity-upload:0.0.2
+    image: gsacavdm/azparity-upload:0.0.3
     imagePullPolicy: Always
     volumeMounts:
     - name: data

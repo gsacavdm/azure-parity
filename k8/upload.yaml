@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
   - name: upload
-    image: gsacavdm/azparity-upload:0.0.2
+    image: gsacavdm/azparity-upload:0.0.3
     imagePullPolicy: Always
     volumeMounts:
     - name: data
