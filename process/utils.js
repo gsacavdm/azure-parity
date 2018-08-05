@@ -52,4 +52,9 @@ function safeGet(obj, properties, defaultVal) {
   return obj;
 }
 
+function getToday() {
+  today = new Date();
+  return today.toISOString().split('T')[0];
+}
+
 var rpRegEx = /[Mm]icrosoft\.[a-zA-Z.]+/g
