@@ -52,7 +52,14 @@ process:
 	docker push ${REGISTRY}/azparity-process:${VERSION}
 
 .PHONY: deploy
-deploy:
-	kubectl get pods | grep azparity- | awk '{ system("kubectl delete pod " $1) }'
+deploy: deploy-collect deploy-upload
+
+.PHONY: deploy-collect
+deploy-collect:
+	kubectl get pods | grep azparity-collect | awk '{ system("kubectl delete pod " $1) }'
 	find k8/ -name collect-*.yaml -exec kubectl apply -f {} \;
+
+.PHONY: deploy-process
+deploy-process:
+	kubectl get pods | grep azparity-process | awk '{ system("kubectl delete pod " $1) }'
 	find k8/ -name process-*.yaml -exec kubectl apply -f {} \;
