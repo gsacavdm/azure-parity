@@ -1,21 +1,25 @@
-function dropDerivedResourceCollections() {
-  db.getCollectionNames().filter(c =>  c.indexOf("resource") > -1 && c !== "resourceProvider").forEach(c => { db[c].drop()} );
-}
-function dropDerivedCollections(name) {
-  db.getCollectionNames().filter(c =>  c.indexOf(name) > -1 && c !== name).forEach(c => { db[c].drop()} );
-}
-
-function dropAndInsert(collectionName, collection) {
-  if (db.getCollectionNames().filter(c => c === collectionName).length === 1) {
-    db[collectionName].drop();
+function getOrGenerateByCloud(collectionName, cloudName, date, generateFunction) {
+  var result = db[collectionName].find({ cloud:cloudName, date: date }) 
+  if (result.count() == 0) {
+    result = generateFunction(cloudName);
+    db[collectionName].insert(result);
   }
-
-  db[collectionName].insert(collection);
+  else {
+    result = result.map(r => r);
+  }
+  return result
 }
 
-function allExists(collectionNames){
-  var found = db.getCollectionNames().filter(c => collectionNames.indexOf(c) > -1);
-  return found.length === collectionNames.length;
+function getOrGenerate(collectionName, date, generateFunction) {
+  var result = db[collectionName].find({ date: date }) 
+  if (result.count() == 0) {
+    result = generateFunction();
+    db[collectionName].insert(result);
+  }
+  else {
+    result = result.map(r => r);
+  }
+  return result
 }
  
 function allRpsAvailable(rps, sovereignBit){
@@ -53,8 +57,9 @@ function safeGet(obj, properties, defaultVal) {
 }
 
 function getToday() {
-  today = new Date();
+  var today = new Date();
   return today.toISOString().split('T')[0];
 }
+today = getToday();
 
 var rpRegEx = /[Mm]icrosoft\.[a-zA-Z.]+/g
