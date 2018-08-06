@@ -1,70 +1,84 @@
-if (allExists([
-  "healthDelta",
-  "healthMissing",
-  "healthMissingByNamespace",
-  "resourceProviderMissingHealth"
-])) {
-  quit();
+function getHealthRows(cloud) { 
+  return db.healthRaw.findOne({ Cloud:cloud, Date: { $gt : today } })
+    .Data.metadata.supportedResourceTypes
+    .map(h =>
+      { return {
+        date: today,
+        cloud: cloud,
+        namespace: h.toLowerCase()
+      }
+    }) 
 }
 
-var h_ww = db.health_Ww.findOne().metadata.supportedResourceTypes.map(h => h.toLowerCase());
-var h_ff = db.health_Ff.findOne().metadata.supportedResourceTypes.map(h => h.toLowerCase());
-var h_mc = db.health_Mc.findOne().metadata.supportedResourceTypes.map(h => h.toLowerCase());
-var h_bf = db.health_Bf.findOne().metadata.supportedResourceTypes.map(h => h.toLowerCase());
+var h_ww = getOrGenerateByCloud("health", "Ww", today, getHealthRows); 
+var h_ff = getOrGenerateByCloud("health", "Ff", today, getHealthRows); 
+var h_mc = getOrGenerateByCloud("health", "Mc", today, getHealthRows); 
+var h_bf = getOrGenerateByCloud("health", "Bf", today, getHealthRows); 
 
 // Get delta for health
-function getHealthInSovereignBit(rp, h_sov, h, sovereignBit) {
-  query = {}
-  query.resourceType = h
-  query[sovereignBit] = 1
-  if (rp.find(query).count() > 0) {
-    return h_sov.indexOf(h) > -1 ? 1 : 0
-  } else {
-    return "N/A"
+var h_delta = getOrGenerate("healthDelta", today, function() {
+  function getHealthInSovereignBit(rp, h_sov, h, sovereignBit) {
+    query = {}
+    query.resourceType = h
+    query[sovereignBit] = 1
+    if (rp.find(query).count() > 0) {
+      return h_sov.map(h_s => h_s.namespace).indexOf(h) > -1 ? 1 : 0
+    } else {
+      return "N/A"
+    }
   }
-}
-h_delta = h_ww.map(h => { return { 
-  namespace: h.match(rpRegEx)[0],
-  resourceType: h,
-  inFairfax: getHealthInSovereignBit(db.resourceTypeDelta, h_ff, h, "inFairfax"),
-  inMooncake: getHealthInSovereignBit(db.resourceTypeDelta, h_mc, h, "inMooncake"),
-  inBlackforest: getHealthInSovereignBit(db.resourceTypeDelta, h_bf, h, "inBlackforest")
-}}).sort()
-dropAndInsert("healthDelta", h_delta)
+
+  return h_ww.map(h => { return { 
+    date: today,
+    namespace: h.namespace.match(rpRegEx)[0],
+    resourceType: h.namespace,
+    inFairfax: getHealthInSovereignBit(db.resourceTypeDelta, h_ff, h.namespace, "inFairfax"), //TODO: Before h_ff and H was just the array of strings, now it's an array of objects where the relevant property is namespace
+    inMooncake: getHealthInSovereignBit(db.resourceTypeDelta, h_mc, h.namespace, "inMooncake"),
+    inBlackforest: getHealthInSovereignBit(db.resourceTypeDelta, h_bf, h.namespace, "inBlackforest")
+  }}).sort()
+})
 
 // Get count of missing health by sovereign
-var h_missing = {
-  Fairfax: h_delta.filter(h => h.inFairfax === 0 ).length,
-  Mooncake: h_delta.filter(h => h.inMooncake === 0 ).length,
-  Blackforest: h_delta.filter(h => h.inBlackforest === 0 ).length,
-}
-dropAndInsert("healthMissing", h_missing);
+var h_missing = getOrGenerate("healthMissing", today, function() {
+  return {
+    date: today,
+    Fairfax: h_delta.filter(h => h.inFairfax === 0 ).length,
+    Mooncake: h_delta.filter(h => h.inMooncake === 0 ).length,
+    Blackforest: h_delta.filter(h => h.inBlackforest === 0 ).length,
+  }
+})
 
 // Get count of missing helath resource types by RP
-function getHealthMissingInSovereignBit(rpns, h_delta, sovereignBit) {
-  return rpns[sovereignBit] === 0 ?
-    "N/A" :
-    h_delta.filter(h => 
-      h.namespace === rpns.namespace
-      && h[sovereignBit] === 0
-    ).length
-}
-h_missing_by_ns = db.resourceProviderDelta.find().map(rpns => { return { 
-  namespace: rpns.namespace,
-  missingInFairfax: getHealthMissingInSovereignBit(rpns, h_delta, "inFairfax", false),
-  missingInMooncake: getHealthMissingInSovereignBit(rpns, h_delta, "inMooncake", false),
-  missingInBlackforest: getHealthMissingInSovereignBit(rpns, h_delta, "inBlackforest", false)
-}})
-dropAndInsert("healthMissingByNamespace", h_missing_by_ns)
+var h_missing_by_ns = getOrGenerate("healthMissingByNamespace", today, function() {
+
+  function getHealthMissingInSovereignBit(rpns, h_delta, sovereignBit) {
+    return rpns[sovereignBit] === 0 ?
+      "N/A" :
+      h_delta.filter(h => 
+        h.namespace === rpns.namespace
+        && h[sovereignBit] === 0
+      ).length
+  }
+
+  return db.resourceProviderDelta.find().map(rpns => { return { 
+    date: today,
+    namespace: rpns.namespace,
+    missingInFairfax: getHealthMissingInSovereignBit(rpns, h_delta, "inFairfax", false),
+    missingInMooncake: getHealthMissingInSovereignBit(rpns, h_delta, "inMooncake", false),
+    missingInBlackforest: getHealthMissingInSovereignBit(rpns, h_delta, "inBlackforest", false)
+  }})
+})
 
 
 // Get count of resource providers missing one or more resource types in health by sovereign
-rpns_missing_h = {
-  Fairfax: h_missing_by_ns.filter(ns => ns.missingInFairfax > 0 ).length,
-  Mooncake: h_missing_by_ns.filter(ns => ns.missingInMooncake > 0 ).length,
-  Blackforest: h_missing_by_ns.filter(ns => ns.missingInBlackforest > 0 ).length
-}
-dropAndInsert("resourceProviderMissingHealth", rpns_missing_h);
+var rpns_missing_h = getOrGenerate("resourceProviderMissingHealth", today, function() {
+  return {
+    date: today,
+    Fairfax: h_missing_by_ns.filter(ns => ns.missingInFairfax > 0 ).length,
+    Mooncake: h_missing_by_ns.filter(ns => ns.missingInMooncake > 0 ).length,
+    Blackforest: h_missing_by_ns.filter(ns => ns.missingInBlackforest > 0 ).length
+  }
+})
 
 /*
 /////////////////////////
