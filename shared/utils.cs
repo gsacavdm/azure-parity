@@ -92,12 +92,16 @@ namespace azure_parity
                     }
                     //utils.Log(data);
 
-                    string wrappedData = WrapData(cloudName, sourceName, data);
-                    
-                    utils.Log(String.Format("Save Collected Data. DataPath={0}", dataPath));
-                    File.WriteAllText(dataPath, data);
+                    if (!string.IsNullOrEmpty(data)) {
+                        string wrappedData = WrapData(cloudName, sourceName, data);
+                        
+                        utils.Log("Save Collected Data. DataPath={0}", dataPath);
+                        File.WriteAllText(dataPath, wrappedData);
 
-                    lastCollected[dataFile] = DateTime.UtcNow.ToString();
+                        lastCollected[dataFile] = DateTime.UtcNow.ToString();
+                    } else {
+                        utils.Log("No Collected Data. DataPath={0}", dataPath);
+                    }
                 }
             
                 File.WriteAllText(lastCollectedFilePath, lastCollected.ToString());
